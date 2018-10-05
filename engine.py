@@ -165,8 +165,8 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 libtcod.console_clear(con)
 
         if skill_index is not None and previous_game_state != GameStates.PLAYER_DEAD and skill_index < len(
-                player.skills.number_of_skills):
-            skill = player.skills.number_of_skills[skill_index]
+                player.skills.skill_list):
+            skill = player.skills.skill_list[skill_index]
 
             if game_state == GameStates.SHOW_SKILL_MENU:
                 player_turn_results.extend(player.skills.use(skill, entities=entities, fov_map=fov_map))
@@ -254,10 +254,12 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 skill_component = Skill(use_function=cast_mind_lightning, maximum_range=5, hunger_cost = 40 + player.fighter.psyche / 2)
                 psybolt = Entity(0, 0, ' ', libtcod.yellow, 'PsyBolt', skill=skill_component)
                 player.skills.add_skill(psybolt)
-                if charm in player.skills.number_of_skills:
-                    pass
-                else:
-                    player.skills.add_skill(charm)
+                for charm in player.skills.skill_list:
+                    if charm in player.skills.skill_list:
+                        pass
+                    else:
+                        player.skills.add_skill(charm)
+
 
             libtcod.console_flush()
             libtcod.console_clear(con)
