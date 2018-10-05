@@ -1,14 +1,15 @@
 import libtcodpy as libtcod
-
+from dataclasses import dataclass, field
+from typing import List
 from game_messages import Message
 
-class Skills:
-    def __init__(self, capacity):
-        self.capacity = capacity
-        self.number_of_skills = []
 
-    def __eq__(self, other):
-        return self.__class__ is other.__class__
+
+
+@dataclass
+class Skills:
+    number_of_skills: List = field(default_factory=list)
+    capacity: int = 0
 
     def add_skill(self, skill):
         results = []
