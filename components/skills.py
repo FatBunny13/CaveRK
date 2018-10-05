@@ -6,15 +6,16 @@ from game_messages import Message
 
 
 
-@dataclass
 class Skills:
-    number_of_skills: List = field(default_factory=list)
-    capacity: int = 0
+
+    def __init__(self, capacity):
+
+        self.capacity = int(capacity)
+        self.skill_list = list()
 
     def add_skill(self, skill):
-        results = []
-
-        if len(self.number_of_skills) >= self.capacity:
+        results = list()
+        if( len(self.skill_list) >= self.capacity):
             results.append({
                 'item_added': None,
                 'message': Message('You cannot learn anymore skills.', libtcod.yellow)
@@ -25,7 +26,7 @@ class Skills:
                 'message': Message('You have learned the skill {0}!'.format(skill.name), libtcod.blue)
             })
 
-            self.number_of_skills.append(skill)
+            self.skill_list.append(skill)
 
         return results
 
