@@ -19,6 +19,11 @@ from entity import Entity
 
 def play_game(player, entities, game_map, message_log,game_state, con, panel, constants):
     fov_recompute = True
+    charm_learned = False
+    psybolt_learned = False
+    hide_learned = False
+    fireball_learned = False
+    cure_light_learned = False
 
     fov_map = initialize_fov(game_map)
 
@@ -79,14 +84,14 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
         player_turn_results = []
 
+
         if move and game_state == GameStates.PLAYERS_TURN:
-            #The starvation variable increases or decreases as the player gets more psyche and gets hungrier.
-            libtcod.console_flush()
             starvation_variable = 1
             player.fighter.nutrition -= 1
             dx, dy = move
             destination_x = player.x + dx
             destination_y = player.y + dy
+
 
             if player.fighter.nutrition <= 0:
                 kill_player(player)
@@ -142,14 +147,20 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
         if show_inventory:
             previous_game_state = game_state
             game_state = GameStates.SHOW_INVENTORY
+            libtcod.console_flush()
+            libtcod.console_clear(con)
 
         if use_skills:
             previous_game_state = game_state
             game_state = GameStates.SHOW_SKILL_MENU
+            libtcod.console_flush()
+            libtcod.console_clear(con)
 
         if drop_inventory:
             previous_game_state = game_state
             game_state = GameStates.DROP_INVENTORY
+            libtcod.console_flush()
+            libtcod.console_clear(con)
 
         if inventory_index is not None and previous_game_state != GameStates.PLAYER_DEAD and inventory_index < len(
                 player.inventory.items):
@@ -165,8 +176,8 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 libtcod.console_clear(con)
 
         if skill_index is not None and previous_game_state != GameStates.PLAYER_DEAD and skill_index < len(
-                player.skills.skill_list):
-            skill = player.skills.skill_list[skill_index]
+                player.skills.number_of_skills):
+            skill = player.skills.number_of_skills[skill_index]
 
             if game_state == GameStates.SHOW_SKILL_MENU:
                 player_turn_results.extend(player.skills.use(skill, entities=entities, fov_map=fov_map))
@@ -217,8 +228,10 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 player.fighter.job += 1
                 player.fighter.priest_level += 1
                 skill_component = Skill(use_function=prayer, amount=40, mana_cost=5)
-                bandage = Entity(0, 0, '?', libtcod.yellow, 'Cure Light Wounds', skill=skill_component)
-                player.skills.add_skill(bandage)
+                cure_light = Entity(0, 0, '?', libtcod.yellow, 'Cure Light Wounds', skill=skill_component)
+                if cure_light and cure_light_learned is False:
+                    cure_light_learned = True
+                    player.skills.add_skill(cure_light)
             elif job == 'fig':
                 player.fighter.base_power += 2
                 player.fighter.base_defense += 1
@@ -232,15 +245,21 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 player.fighter.base_agility += 0.5
                 player.fighter.job += 3
                 player.fighter.thief_level += 1
-                player.skills.add_skill(tornado)
+                if tornado and hide_learned is False:
+                    hide_learned = True
+                    player.skills.add_skill(tornado)
             elif job == 'wiz':
-                skill_component = Skill(use_function=cast_spell_fireball,mana_cost=10, skill_targeting=True, targeting_message=Message(
-                    'Left-click a target tile for the fireball, or right-click to cancel.', libtcod.light_cyan),
-                                      damage=25, radius=3)
+                skill_component = Skill(use_function=cast_spell_fireball, mana_cost=10, skill_targeting=True,
+                                        targeting_message=Message(
+                                            'Left-click a target tile for the fireball, or right-click to cancel.',
+                                            libtcod.light_cyan),
+                                        damage=25, radius=3)
                 x = entity.x
                 y = entity.y
-                fireball = Entity(x, y, '?', libtcod.red, 'Fireball',skill=skill_component)
-                player.skills.add_skill(fireball)
+                fireball = Entity(x, y, '?', libtcod.red, 'Fireball', skill=skill_component)
+                if fireball and fireball_learned is False:
+                    fireball_learned = True
+                    player.skills.add_skill(fireball)
             elif job == 'psy':
                 skill_component = Skill(use_function=cast_charm, hunger_cost=10, skill_targeting=True,
                                         targeting_message=Message(
@@ -251,16 +270,15 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 charm = Entity(x, y, '?', libtcod.red, 'Charm Enemy', skill=skill_component)
                 player.fighter.base_psyche += 3
                 player.fighter.job = 5
-                skill_component = Skill(use_function=cast_mind_lightning, maximum_range=5, hunger_cost = 40 + player.fighter.psyche / 2)
+                skill_component = Skill(use_function=cast_mind_lightning, maximum_range=5,
+                                        hunger_cost=40 + player.fighter.psyche / 2)
                 psybolt = Entity(0, 0, ' ', libtcod.yellow, 'PsyBolt', skill=skill_component)
-                player.skills.add_skill(psybolt)
-                for charm in player.skills.skill_list:
-                    if charm in player.skills.skill_list:
-                        pass
-                    else:
-                        player.skills.add_skill(charm)
-
-
+                if psybolt and psybolt_learned is False:
+                    psybolt_learned = True
+                    player.skills.add_skill(psybolt)
+                if charm and charm_learned is False:
+                    player.skills.add_skill(charm)
+                    charm_learned = True
             libtcod.console_flush()
             libtcod.console_clear(con)
             game_state = GameStates.PLAYERS_TURN
@@ -346,16 +364,23 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
         if exit:
             if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.CHARACTER_SCREEN):
                 game_state = previous_game_state
+                libtcod.console_flush()
+                libtcod.console_clear(con)
             elif game_state == GameStates.SHOW_SKILL_MENU:
                 game_state = GameStates.PLAYERS_TURN
+                libtcod.console_flush()
+                libtcod.console_clear(con)
             elif game_state == GameStates.TARGETING:
                 player_turn_results.append({'targeting_cancelled': True})
+                libtcod.console_flush()
+                libtcod.console_clear(con)
             elif game_state == GameStates.SKILL_TARGETING:
                 player_turn_results.append({'targeting_cancelled': True})
+                libtcod.console_flush()
+                libtcod.console_clear(con)
             else:
                 save_game(player, entities, game_map, message_log, game_state)
                 libtcod.console_flush()
-                libtcod.console_clear(panel)
                 libtcod.console_clear(con)
 
                 return True
@@ -452,6 +477,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                     previous_game_state = game_state
                     game_state = GameStates.LEVEL_UP
 
+
         if game_state == GameStates.ENEMY_TURN:
 
             if player.fighter.nutrition <= 0:
@@ -488,6 +514,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                         break
             else:
                 game_state = GameStates.PLAYERS_TURN
+
 
 def main():
     constants = get_constants()

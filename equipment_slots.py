@@ -6,3 +6,4 @@ class EquipmentSlots(Enum):
     OFF_HAND = 2
     RIGHT_BRACELET = 3
     LEFT_BRACELET = 4
+    ARMOUR = 5

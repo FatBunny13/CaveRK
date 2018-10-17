@@ -91,6 +91,10 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
                              'Nutrition: {0}'.format(player.fighter.nutrition))
     libtcod.console_print_ex(panel, 1, 5, libtcod.BKGND_NONE, libtcod.LEFT,
                              'Psyche: {0}'.format(player.fighter.starvation_bonus))
+    libtcod.console_print_ex(con, 1, 20, libtcod.BKGND_NONE, libtcod.LEFT,
+                            'AC {0}'.format(player.fighter.ac))
+    libtcod.console_print_ex(con, 1, 19, libtcod.BKGND_NONE, libtcod.LEFT,
+                            'Will {0}'.format(player.fighter.will))
     if player.fighter.stealthed == 1:
         libtcod.console_print_ex(con, 1, 10, libtcod.BKGND_NONE, libtcod.LEFT,
                                  'Invisible'.format(player.fighter.stealthed))

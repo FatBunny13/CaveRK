@@ -103,7 +103,7 @@ def get_constants():
 
 
 def get_game_variables(constants):
-    fighter_component = Fighter(hp=100, defense=1, power=5, agility=1, job = 0, mana = 10, nutrition=500, base_psyche = 2, starvation_bonus = 0)
+    fighter_component = Fighter(hp=100, defense=1, power=5, agility=1,attack_dice_minimum=1,attack_dice_maximum=2, job = 0,ac=-3,will=1, mana = 10, nutrition=500, base_psyche = 2, starvation_bonus = 0)
     inventory_component = Inventory(26)
     skills_component = Skills(15)
     level_component = Level()
@@ -113,16 +113,21 @@ def get_game_variables(constants):
                     equipment=equipment_component, skills=skills_component)
     entities = [player]
 
-    equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=4)
+    equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=4,damage=random.randint(1,4))
     item_component = Item(use_function=None)
     dagger = Entity(0, 0, '/', libtcod.sky, 'Carving Knife', equippable=equippable_component,item=item_component)
     equippable_component = Equippable(EquipmentSlots.OFF_HAND, defense_bonus=1, agility_bonus=-1)
     item_component = Item(use_function=None)
     buckler = Entity(0, 0, '{', libtcod.sky, 'Buckler', equippable=equippable_component,item=item_component)
+    equippable_component = Equippable(EquipmentSlots.ARMOUR, ac_bonus= 1, will_bonus=1)
+    item_component = Item(use_function=None)
+    robe = Entity(0, 0, '{', libtcod.sky, 'Peasant Garments', equippable=equippable_component, item=item_component)
     player.inventory.add_item(dagger)
     player.equipment.toggle_equip(dagger)
     player.inventory.add_item(buckler)
     player.equipment.toggle_equip(buckler)
+    player.inventory.add_item(robe)
+    player.equipment.toggle_equip(robe)
     game_map = GameMap(constants['map_width'], constants['map_height'])
     game_map.make_map(constants['max_rooms'], constants['room_min_size'], constants['room_max_size'],
                       constants['max_maze_rooms'], constants['maze_min_size'], constants['maze_max_size'],
