@@ -92,7 +92,6 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             destination_x = player.x + dx
             destination_y = player.y + dy
 
-
             if player.fighter.nutrition <= 0:
                 kill_player(player)
                 game_state = GameStates.PLAYER_DEAD
@@ -242,7 +241,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 tornado = Entity(0, 0, '?', libtcod.yellow, 'Hide', skill=skill_component)
                 player.fighter.base_defense += 2
                 player.fighter.base_power += 1
-                player.fighter.base_agility += 0.5
+                player.fighter.base_agility -= 5
                 player.fighter.job += 3
                 player.fighter.thief_level += 1
                 if tornado and hide_learned is False:
