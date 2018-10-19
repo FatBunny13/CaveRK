@@ -228,7 +228,7 @@ class GameMap:
                 monster_choice = random_choice_from_dict(monster_chances)
 
                 if monster_choice == 'orc':
-                    fighter_component = Fighter(hp=20, defense=2, power=5, xp=5000, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=4,ac=0,will=0)
+                    fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=4,ac=0,will=0)
                     ai_component = BasicMonster()
 
                     monster = Entity(x, y, 'o', libtcod.desaturated_green, 'Orc', blocks=True,
