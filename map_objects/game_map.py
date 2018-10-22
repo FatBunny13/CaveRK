@@ -198,8 +198,9 @@ class GameMap:
         # Get a random number of items
         number_of_items = randint(0, max_items_per_room)
         monster_chances = {
-                'orc': 80,
+                'orc': 40,
                 'troll': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
+                'stalker': 20,
                 'fairy': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
                 'slime': from_dungeon_level([[20, 3], [30, 5], [60, 7]], self.dungeon_level),
                 'shrub': from_dungeon_level([[15, 0],[0, 1]], self.dungeon_level),
@@ -228,10 +229,16 @@ class GameMap:
                 monster_choice = random_choice_from_dict(monster_chances)
 
                 if monster_choice == 'orc':
-                    fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=4,ac=0,will=0)
+                    fighter_component = Fighter(hp=20, defense=2, power=5, xp=5000, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=4,ac=0,will=0)
                     ai_component = BasicMonster()
 
                     monster = Entity(x, y, 'o', libtcod.desaturated_green, 'Orc', blocks=True,
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
+                elif monster_choice == 'stalker':
+                    fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=0,stealthed=1)
+                    ai_component = BasicMonster()
+
+                    monster = Entity(x, y, '@', libtcod.gray, 'Invisible Stalker', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
                 elif monster_choice == 'troll':
                     fighter_component = Fighter(hp=50, defense=3, power=6, xp=100, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=8,ac= -3,will=2)
@@ -252,7 +259,7 @@ class GameMap:
                     monster = Entity(x, y, 's', libtcod.green, 'Slime', blocks=True, fighter=fighter_component,
                                      render_order=RenderOrder.ACTOR, ai=ai_component)
                 elif monster_choice == 'shrub':
-                    fighter_component = Fighter(hp=1, defense=0, power=5, xp=160, agility= 3,mana = 0,base_psyche = 0,attack_dice_minimum=4,attack_dice_maximum=8,ac=-15,will=0)
+                    fighter_component = Fighter(hp=10, defense=0, power=5, xp=160, agility= 3,mana = 0,base_psyche = 0,attack_dice_minimum=4,attack_dice_maximum=8,ac=-15,will=0)
                     ai_component = ShrubMonster()
 
                     monster = Entity(x, y, '"', libtcod.desaturated_green, 'Thorn-Shrub', blocks=True, fighter=fighter_component,
