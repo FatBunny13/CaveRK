@@ -4,7 +4,7 @@ import random
 from components.equipment import Equipment
 from components.equippable import Equippable
 from components.item import Item
-from fighter import Fighter
+from fighter import Fighter, Jobs
 from components.inventory import Inventory
 from components.level import Level
 from components.skills import Skills
@@ -103,14 +103,15 @@ def get_constants():
 
 
 def get_game_variables(constants):
-    fighter_component = Fighter(hp=100, defense=1, power=5, agility=1,attack_dice_minimum=1,attack_dice_maximum=2, job = 0,ac=-3,will=1, mana = 10, nutrition=500, base_psyche = 2, starvation_bonus = 0)
+    fighter_component = Fighter(hp=100, defense=1, power=5, agility=1,attack_dice_minimum=1,attack_dice_maximum=2,ac=-3,will=1, mana = 10, nutrition=500, base_psyche = 2, starvation_bonus = 0)
     inventory_component = Inventory(26)
     skills_component = Skills(15)
     level_component = Level()
+    job_component = Jobs()
     equipment_component = Equipment()
-    player = Entity(0, 0, '@', libtcod.white, 'Player', blocks=True, render_order=RenderOrder.ACTOR,
+    player = Entity(0, 0, '@', libtcod.white, 'Player', blocks=True,player=True, render_order=RenderOrder.ACTOR,
                     fighter=fighter_component, inventory=inventory_component, level=level_component,
-                    equipment=equipment_component, skills=skills_component)
+                    equipment=equipment_component, skills=skills_component,job=job_component)
     entities = [player]
 
     equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=4,damage=random.randint(1,4))

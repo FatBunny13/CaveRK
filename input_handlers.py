@@ -219,9 +219,12 @@ def handle_job_selection(key, player):
             return {'job': 'thi'}
         elif key_char == 'd':
             return {'job': 'wiz'}
-        if player.fighter.thief_level >= 1 and key_char == 'e':
+        if player.job.wizard_level >= 1 and key_char == 'e':
             return {'job': 'psy'}
-
+        if player.job.psychic_level >= 1 and key_char == 'f':
+            return {'job': 'enchant'}
+        if player.job.psychic_level >= 1 and key_char =='g':
+            return {'job': 'diva'}
     return {}
 
 def handle_gender_selection(key):

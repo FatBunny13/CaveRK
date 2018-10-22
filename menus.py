@@ -88,7 +88,7 @@ def main_menu(con, background_image, screen_width, screen_height):
     libtcod.console_print_ex(0, int(screen_width / 2), int(screen_height - 5) + 1, libtcod.BKGND_NONE, libtcod.CENTER,
                              'You have decided to venture into the Caves of Havoc. It cant be too hard! Find the Orb and face whatever horrors you find!')
     libtcod.console_print_ex(0, int(screen_width / 2), int(screen_height - 2), libtcod.BKGND_NONE, libtcod.CENTER,
-                             'Coding by Alfonso Abraham. Additional Coding and Bugfixing by Julie Abraham.')
+                             'By Fatbunny13.')
 
     menu(con, '', ['Start a game','Continue last game', 'Quit'], 24, screen_width, screen_height)
     
@@ -127,8 +127,22 @@ def job_selection_menu(con, header, player, menu_width, screen_width, screen_hei
                'Thief'.format(player.fighter.max_hp),
                'Magician'.format(player.fighter.max_hp),]
 
-    if player.fighter.thief_level >= 1:
+    if player.job.wizard_level >= 1:
         options.append('Psychic')
+
+    if player.job.psychic_level >= 1:
+        if player.fighter.gender is 2:
+            options.append('Enchantress')
+        else:
+            options.append('Enchanter')
+
+    if player.job.psychic_level >= 1:
+        if player.fighter.gender is 2:
+            options.append('Diva')
+        elif player.fighter.gender is 3:
+            options.append('Divum')
+        else:
+            options.append('Divo')
 
 
     menu(con, header, options, menu_width, screen_width, screen_height)

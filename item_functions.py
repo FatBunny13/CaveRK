@@ -1,7 +1,7 @@
 import libtcodpy as libtcod
 
 
-from components.ai import ConfusedMonster, CharmedMonster
+from components.ai import ConfusedMonster,CharmedMonster
 
 
 from game_messages import Message
@@ -21,27 +21,101 @@ def heal(*args, **kwargs):
 
     return results
 
-def eat(*args, **kwargs):
-    entity = args[0]
-    amount = kwargs.get('amount')
+def cast_bless(*args,**kwargs):
+    caster = args[0]
+    entities = kwargs.get('entities')
+    fov_map = kwargs.get('fov_map')
+    target_x = kwargs.get('target_x')
+    target_y = kwargs.get('target_y')
 
     results = []
 
-    entity.fighter.eat(amount)
-    results.append({'consumed': True, 'message': Message('What a filling meal!', libtcod.green)})
+    target = None
+    mana_cost = kwargs.get('mana_cost')
+
+    if not libtcod.map_is_in_fov(fov_map, target_x, target_y):
+        results.append(
+            {'used': False, 'message': Message('You cannot target a tile outside your field of view.', libtcod.yellow)})
+        return results
+
+    for entity in entities:
+        if entity.x == target_x and entity.y == target_y:
+            caster.fighter.take_mana_damage(mana_cost)
+            entity.fighter.blessed = 1
+            entity.fighter.blessed_timer += 10
+            entity.fighter.bless_bonus += 1
+
+            entity.owner = entity
+
+            results.append({'used': True, 'message': Message(
+                'The {0} is bathed in a bright light!'.format(entity.name),
+                libtcod.light_green)})
+
+            break
+    else:
+        results.append(
+            {'used': False, 'message': Message('There is nothing targetable at that location.', libtcod.yellow)})
 
     return results
 
-def hide(player):
+def cast_doom(*args,**kwargs):
+    caster = args[0]
+    entities = kwargs.get('entities')
+    fov_map = kwargs.get('fov_map')
+    target_x = kwargs.get('target_x')
+    target_y = kwargs.get('target_y')
 
     results = []
 
-    if player.fighter.stealthed == 1:
+    target = None
+    mana_cost = kwargs.get('mana_cost')
+
+    if not libtcod.map_is_in_fov(fov_map, target_x, target_y):
+        results.append(
+            {'used': False, 'message': Message('You cannot target a tile outside your field of view.', libtcod.yellow)})
+        return results
+
+    for entity in entities:
+        if entity.x == target_x and entity.y == target_y:
+            caster.fighter.take_mana_damage(mana_cost)
+            entity.fighter.doomed = 2
+
+            entity.owner = entity
+
+            results.append({'used': True, 'message': Message(
+                'The {0} is bathed in a dark and gloomy shadow!'.format(entity.name),
+                libtcod.red)})
+
+            break
+    else:
+        results.append(
+            {'used': False, 'message': Message('There is nothing targetable at that location.', libtcod.yellow)})
+
+    return results
+
+def hide(*args,**kwargs):
+    caster = args[0]
+    results = []
+
+    if caster.fighter.stealthed == 1:
         results.append({'stealthed': False, 'message': Message('You are already hidden!', libtcod.yellow)})
 
     else:
-        player.fighter.stealthed += 1
+        caster.fighter.stealthed += 1
         results.append({'stealthed': True, 'message': Message('You hide in the shadows!', libtcod.yellow)})
+
+    return results
+
+def become_clairvoyant(*args,**kwargs):
+    caster = args[0]
+    results = []
+
+    if caster.fighter.clairvoyance is True:
+        results.append({'stealthed': False, 'message': Message('You are already clairvoyant!', libtcod.yellow)})
+
+    else:
+        caster.fighter.clairvoyance = True
+        results.append({'stealthed': True, 'message': Message('You can suddenly see everything!', libtcod.yellow)})
 
     return results
 
@@ -202,6 +276,31 @@ def cast_fireball(*args, **kwargs):
 
     return results
 
+def poison_enemy(*args, **kwargs):
+    caster = args[0]
+    entities = kwargs.get('entities')
+    fov_map = kwargs.get('fov_map')
+    damage = kwargs.get('damage')
+    radius = kwargs.get('radius')
+    target_x = kwargs.get('target_x')
+    target_y = kwargs.get('target_y')
+    mana_cost = kwargs.get('mana_cost')
+    maximum_range = kwargs.get('maximum_range')
+    closest_distance = maximum_range + 1
+
+    results = []
+
+    if not libtcod.map_is_in_fov(fov_map, target_x, target_y):
+        results.append({'consumed': False, 'message': Message('You cannot target a tile outside your field of view.', libtcod.yellow)})
+        return results
+
+    for entity in entities:
+        if entity.distance(target_x, target_y) <= maximum_range and entity.fighter and entity != caster:
+            results.append({'message': Message('The {0} is poisoned!'.format(entity.name), libtcod.green)})
+            entity.fighter.poisoned = 1
+
+    return results
+
 def cast_spell_fireball(*args, **kwargs):
     caster = args[0]
     entities = kwargs.get('entities')
@@ -227,6 +326,56 @@ def cast_spell_fireball(*args, **kwargs):
             results.extend(entity.fighter.take_damage(damage))
 
     return results
+
+def cast_shockwave(*args, **kwargs):
+    caster = args[0]
+    entities = kwargs.get('entities')
+    fov_map = kwargs.get('fov_map')
+    damage = kwargs.get('damage')
+    radius = kwargs.get('radius')
+    target_x = kwargs.get('target_x')
+    target_y = kwargs.get('target_y')
+    mana_cost = kwargs.get('mana_cost')
+
+    results = []
+
+    caster.fighter.take_mana_damage(mana_cost)
+    results.append({'consumed': True, 'message': Message('A shockwave comes from the {0}\'s feet, damaging everything within {1} tiles!'.format(caster.name,radius), libtcod.orange)})
+
+    for entity in entities:
+        if entity.distance(caster.x,caster.y) <= radius and entity.fighter:
+            results.append({'message': Message('The {0} gets burned for {1} hit points.'.format(entity.name, damage), libtcod.orange)})
+            results.extend(entity.fighter.take_damage(damage))
+
+    return results
+
+def cast_charm(*args, **kwargs):
+    entities = kwargs.get('entities')
+    fov_map = kwargs.get('fov_map')
+    target_x = kwargs.get('target_x')
+    target_y = kwargs.get('target_y')
+
+    results = []
+
+    if not libtcod.map_is_in_fov(fov_map, target_x, target_y):
+        results.append({'used': False, 'message': Message('You cannot target a tile outside your field of view.', libtcod.yellow)})
+        return results
+
+    for entity in entities:
+        if entity.x == target_x and entity.y == target_y and entity.ai:
+            charmed_ai = CharmedMonster(entity.ai, 10)
+
+            charmed_ai.owner = entity
+            entity.ai = charmed_ai
+
+            results.append({'used': True, 'message': Message('The eyes of the {0} beam with malice! As they attack in frothing fury!'.format(entity.name), libtcod.light_green)})
+
+            break
+    else:
+        results.append({'used': False, 'message': Message('There is no targetable enemy at that location.', libtcod.yellow)})
+
+    return results
+
 
 
 def cast_confuse(*args, **kwargs):
@@ -256,29 +405,32 @@ def cast_confuse(*args, **kwargs):
 
     return results
 
-def cast_charm(*args, **kwargs):
+def cast_mind_confuse(*args, **kwargs):
+    caster = args[0]
     entities = kwargs.get('entities')
     fov_map = kwargs.get('fov_map')
     target_x = kwargs.get('target_x')
     target_y = kwargs.get('target_y')
 
     results = []
+    hunger_cost = 40 + caster.fighter.psyche + (caster.fighter.starvation_bonus / 2)
 
     if not libtcod.map_is_in_fov(fov_map, target_x, target_y):
-        results.append({'used': False, 'message': Message('You cannot target a tile outside your field of view.', libtcod.yellow)})
+        results.append({'consumed': False, 'message': Message('You cannot target a tile outside your field of view.', libtcod.yellow)})
         return results
 
     for entity in entities:
         if entity.x == target_x and entity.y == target_y and entity.ai:
-            charmed_ai = CharmedMonster(entity.ai, 10)
+            caster.fighter.take_hunger_damage(hunger_cost)
+            confused_ai = ConfusedMonster(entity.ai, 10)
 
-            charmed_ai.owner = entity
-            entity.ai = charmed_ai
+            confused_ai.owner = entity
+            entity.ai = confused_ai
 
-            results.append({'used': True, 'message': Message('The eyes of the {0} beam with malice! As they attack in frothing fury!'.format(entity.name), libtcod.light_green)})
+            results.append({'consumed': True, 'message': Message('The eyes of the {0} look vacant, as he starts to stumble around!'.format(entity.name), libtcod.light_green)})
 
             break
     else:
-        results.append({'used': False, 'message': Message('There is no targetable enemy at that location.', libtcod.yellow)})
+        results.append({'consumed': False, 'message': Message('There is no targetable enemy at that location.', libtcod.yellow)})
 
     return results
