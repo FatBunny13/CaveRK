@@ -193,9 +193,9 @@ class Fighter:
                 results.extend(target.fighter.take_damage(damage))
                 damage = randint(self.attack_dice_minimum, self.attack_dice_maximum) + self.bless_bonus / self.doomed
                 if target.fighter.riposte == 1 and 9 <= riposte_chance <= 10:
-                    results.append({'message': Message('But {0} swiftly reposte\'s {1} for {2} hit points!'.format(
+                    results.append({'message': Message('But {0} swiftly reposte\'s {1} attack for {2} hit points!'.format(
                         target.name.capitalize(), self.owner.name, str(damage)), libtcod.white)})
-                    results.extend(self.take_damage(damage))
+                    results.extend(self.take_damage(damage/2))
                     riposte_chance = randint(1, 10)
 
 

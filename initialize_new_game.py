@@ -103,7 +103,7 @@ def get_constants():
 
 
 def get_game_variables(constants):
-    fighter_component = Fighter(hp=100, defense=1, power=5, agility=1,attack_dice_minimum=1,attack_dice_maximum=2,ac=-3,will=1, mana = 10, nutrition=500, base_psyche = 2, starvation_bonus = 0)
+    fighter_component = Fighter(hp=100, defense=1, power=5, agility=1,attack_dice_minimum=1,attack_dice_maximum=2,ac=-3,will=1, mana = 10, nutrition=500, base_psyche = 2, starvation_bonus = 0,riposte=0)
     inventory_component = Inventory(26)
     skills_component = Skills(15)
     level_component = Level()

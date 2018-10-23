@@ -119,6 +119,8 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 if entity.fighter and entity.fighter.riposte == 1:
                     entity.fighter.riposte_time -= 1
                     if entity.fighter.riposte_time == 0:
+                        message_log.add_message(Message(
+                            'The {0} suddenly has less grace.'.format(entity.name), libtcod.red))
                         entity.fighter.riposte = 0
 
             for entity in entities:

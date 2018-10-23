@@ -102,7 +102,7 @@ def hide(*args,**kwargs):
         results.append({'stealthed': False, 'message': Message('You are already hidden!', libtcod.yellow)})
 
     else:
-        caster.fighter.stealthed = 1
+        caster.fighter.stealthed += 1
         results.append({'stealthed': True, 'message': Message('You hide in the shadows!', libtcod.yellow)})
 
     return results
@@ -115,7 +115,7 @@ def riposte(*args,**kwargs):
         results.append({'stealthed': False, 'message': Message('You can already riposte!', libtcod.yellow)})
 
     else:
-        caster.fighter.riposte = 1
+        caster.fighter.riposte += 1
         caster.fighter.riposte_time = randint(10,20)
         results.append({'stealthed': True, 'message': Message('You suddenly feel graceful!', libtcod.yellow)})
 
