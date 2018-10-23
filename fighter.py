@@ -19,7 +19,8 @@ class Jobs:
 
 class Fighter:
     def __init__(self, hp, defense, power, agility,mana,base_psyche,attack_dice_minimum,attack_dice_maximum,ac,will,blessed=0,doomed=1,poison_timer=0,
-                clairvoyance=False,poisoned=0,blessed_timer=0,bless_bonus=0,starvation_bonus = 0,nutrition=0, gender=0,stealthed=0,riposte=0, race=0, xp=0):
+                clairvoyance=False,poisoned=0,blessed_timer=0,bless_bonus=0,starvation_bonus = 0,nutrition=0, gender=0,stealthed=0,riposte=0,
+                 riposte_time=0,race=0, xp=0,eat_function = None):
         self.base_max_hp = hp
         self.hp = hp
         self.base_defense = defense
@@ -46,6 +47,8 @@ class Fighter:
         self.doomed = doomed
         self.clairvoyance = clairvoyance
         self.riposte = riposte
+        self.riposte_time = riposte_time
+        self.eat_function = eat_function
 
     @property
     def max_mana(self):
@@ -171,11 +174,13 @@ class Fighter:
     def attack(self, target):
         results = []
         global damage
+        global riposte_chance
         min = 1
         max = 20
 
         hit_chance = randint(min,max)
         defence_chance = randint(min, max)
+        riposte_chance = randint(1,10)
 
         damage = randint(self.attack_dice_minimum,self.attack_dice_maximum) + self.bless_bonus / self.doomed
 
@@ -186,7 +191,14 @@ class Fighter:
                 results.append({'message': Message('{0} attacks {1} for {2} hit points.'.format(
                     self.owner.name.capitalize(), target.name, str(damage)), libtcod.white)})
                 results.extend(target.fighter.take_damage(damage))
-                damage = randint(self.attack_dice_minimum, self.attack_dice_maximum)
+                damage = randint(self.attack_dice_minimum, self.attack_dice_maximum) + self.bless_bonus / self.doomed
+                if target.fighter.riposte == 1 and 9 <= riposte_chance <= 10:
+                    results.append({'message': Message('But {0} swiftly reposte\'s {1} for {2} hit points!'.format(
+                        target.name.capitalize(), self.owner.name, str(damage)), libtcod.white)})
+                    results.extend(self.take_damage(damage))
+                    riposte_chance = randint(1, 10)
+
+
             else:
                 results.append({'message': Message('{0} attacks {1} but does no damage.'.format(
                     self.owner.name.capitalize(), target.name), libtcod.white)})
@@ -225,13 +237,11 @@ class Fighter:
         return results
 
     def poison(self, target):
-        global damage
+        global poisondamage
 
-        damage = randint(1,4)
+        poisondamage = randint(0,4)
 
         results = []
-        results.append({'message': Message('{0} takes poison.'.format(
-                    self.owner.name.capitalize(), target.name, str(damage)), libtcod.white)})
         results.extend(target.fighter.take_damage(damage))
-        damage = randint(1,4)
+        poisondamage = randint(0,4)
         return results

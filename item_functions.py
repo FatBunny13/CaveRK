@@ -5,6 +5,7 @@ from components.ai import ConfusedMonster,CharmedMonster
 
 
 from game_messages import Message
+from random import randint
 
 
 def heal(*args, **kwargs):
@@ -101,8 +102,22 @@ def hide(*args,**kwargs):
         results.append({'stealthed': False, 'message': Message('You are already hidden!', libtcod.yellow)})
 
     else:
-        caster.fighter.stealthed += 1
+        caster.fighter.stealthed = 1
         results.append({'stealthed': True, 'message': Message('You hide in the shadows!', libtcod.yellow)})
+
+    return results
+
+def riposte(*args,**kwargs):
+    caster = args[0]
+    results = []
+
+    if caster.fighter.riposte == 1:
+        results.append({'stealthed': False, 'message': Message('You can already riposte!', libtcod.yellow)})
+
+    else:
+        caster.fighter.riposte = 1
+        caster.fighter.riposte_time = randint(10,20)
+        results.append({'stealthed': True, 'message': Message('You suddenly feel graceful!', libtcod.yellow)})
 
     return results
 
@@ -298,6 +313,7 @@ def poison_enemy(*args, **kwargs):
         if entity.distance(target_x, target_y) <= maximum_range and entity.fighter and entity != caster:
             results.append({'message': Message('The {0} is poisoned!'.format(entity.name), libtcod.green)})
             entity.fighter.poisoned = 1
+            entity.fighter.poison_timer = randint(10,20)
 
     return results
 

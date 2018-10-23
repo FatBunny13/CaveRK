@@ -11,7 +11,8 @@ from loader_functions.data_loaders import load_game, save_game
 from menus import main_menu, message_box
 from render_functions import clear_all, render_all
 from character import Gender
-from item_functions import prayer, cast_tornado, heal, cast_lightning,cast_mind_lightning, hide, cast_spell_fireball,cast_charm
+from item_functions import prayer, cast_tornado, heal, cast_lightning,cast_mind_lightning, hide, cast_spell_fireball,cast_charm,cast_shockwave,cast_bless,cast_doom,cast_mind_confuse,become_clairvoyant,poison_enemy
+from item_functions import riposte
 from components.skills import Skills
 from components.skill import Skill
 from entity import Entity
@@ -24,6 +25,12 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
     hide_learned = False
     fireball_learned = False
     cure_light_learned = False
+    shockwave_learned = False
+    bless_learned = False
+    doom_learned = False
+    clairvoyant_learned = False
+    cobrakiss_learned = False
+    ripostedance_learned = False
 
     fov_map = initialize_fov(game_map)
 
@@ -44,6 +51,8 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
         libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, key, mouse)
 
         if fov_recompute:
+            if player.fighter.clairvoyance == 1:
+                constants['fov_radius'] = 20
             recompute_fov(fov_map, player.x, player.y, constants['fov_radius'], constants['fov_light_walls'],
                           constants['fov_algorithm'])
 
@@ -91,6 +100,37 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             dx, dy = move
             destination_x = player.x + dx
             destination_y = player.y + dy
+
+            for entity in entities:
+                if entity.ai and entity.fighter.stealthed is 1 and player.fighter.clairvoyance is False:
+                    entity.char = ' '
+                elif entity.ai and entity.fighter.stealthed is 1 and player.fighter.clairvoyance is True:
+                    entity.char = entity.CHAR
+
+            for entity in entities:
+                if entity.fighter and entity.fighter.poisoned == 1:
+                    player.fighter.poison(entity)
+                    if entity.ai and entity.fighter.hp <= 1:
+                        kill_monster(entity)
+                    if entity.player and entity.fighter.hp <= 1:
+                        kill_player(entity)
+
+            for entity in entities:
+                if entity.fighter and entity.fighter.riposte == 1:
+                    entity.fighter.riposte_time -= 1
+                    if entity.fighter.riposte_time == 0:
+                        entity.fighter.riposte = 0
+
+            for entity in entities:
+                if entity.fighter and entity.fighter.poisoned == 1:
+                    entity.fighter.poison_timer -= 1
+                    if entity.fighter.poison_time == 0:
+                        entity.fighter.poison = 0
+
+
+
+
+
 
             if player.fighter.nutrition <= 0:
                 kill_player(player)
@@ -147,19 +187,16 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             previous_game_state = game_state
             game_state = GameStates.SHOW_INVENTORY
             libtcod.console_flush()
-            libtcod.console_clear(con)
 
         if use_skills:
             previous_game_state = game_state
             game_state = GameStates.SHOW_SKILL_MENU
             libtcod.console_flush()
-            libtcod.console_clear(con)
 
         if drop_inventory:
             previous_game_state = game_state
             game_state = GameStates.DROP_INVENTORY
             libtcod.console_flush()
-            libtcod.console_clear(con)
 
         if inventory_index is not None and previous_game_state != GameStates.PLAYER_DEAD and inventory_index < len(
                 player.inventory.items):
@@ -168,11 +205,9 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             if game_state == GameStates.SHOW_INVENTORY:
                 player_turn_results.extend(player.inventory.use(item, entities=entities, fov_map=fov_map))
                 libtcod.console_flush()
-                libtcod.console_clear(con)
             elif game_state == GameStates.DROP_INVENTORY:
                 player_turn_results.extend(player.inventory.drop_item(item))
                 libtcod.console_flush()
-                libtcod.console_clear(con)
 
         if skill_index is not None and previous_game_state != GameStates.PLAYER_DEAD and skill_index < len(
                 player.skills.number_of_skills):
@@ -181,7 +216,6 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             if game_state == GameStates.SHOW_SKILL_MENU:
                 player_turn_results.extend(player.skills.use(skill, entities=entities, fov_map=fov_map))
                 libtcod.console_flush()
-                libtcod.console_clear(con)
 
         if take_stairs and game_state == GameStates.PLAYERS_TURN:
             for entity in entities:
@@ -189,7 +223,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                     entities = game_map.next_floor(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
-                    libtcod.console_clear(con)
+                    libtcod.console_flush()
 
                     break
             else:
@@ -201,7 +235,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                     entities = game_map.previous_floor(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
-                    libtcod.console_clear(con)
+                    libtcod.console_flush()
 
                     break
             else:
@@ -216,7 +250,6 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             elif level_up == 'def':
                 player.fighter.base_defense += 1
             libtcod.console_flush()
-            libtcod.console_clear(con)
             game_state = GameStates.JOB_SELECTION
 
 #For some reason the skil menu is linked here. I wonder why?
@@ -224,8 +257,8 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             if job == 'pri':
                 player.fighter.base_max_hp += 20
                 player.fighter.hp += 20
-                player.fighter.job += 1
-                player.fighter.priest_level += 1
+                player.job.job = 1
+                player.job.priest_level += 1
                 skill_component = Skill(use_function=prayer, amount=40, mana_cost=5)
                 cure_light = Entity(0, 0, '?', libtcod.yellow, 'Cure Light Wounds', skill=skill_component)
                 if cure_light and cure_light_learned is False:
@@ -234,20 +267,24 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             elif job == 'fig':
                 player.fighter.base_power += 2
                 player.fighter.base_defense += 1
-                player.fighter.job += 2
-                player.fighter.fighter_level += 1
+                player.job.job = 2
+                player.job.fighter_level += 1
             elif job == 'thi':
                 skill_component = Skill(use_function=hide)
-                tornado = Entity(0, 0, '?', libtcod.yellow, 'Hide', skill=skill_component)
+                shadow_self = Entity(0, 0, '?', libtcod.yellow, 'Hide', skill=skill_component)
                 player.fighter.base_defense += 2
                 player.fighter.base_power += 1
-                player.fighter.base_agility -= 5
-                player.fighter.job += 3
-                player.fighter.thief_level += 1
-                if tornado and hide_learned is False:
+                player.fighter.base_agility += 1
+                player.job.job = 3
+                player.job.thief_level += 1
+                if shadow_self and hide_learned is False:
                     hide_learned = True
-                    player.skills.add_skill(tornado)
+                    player.skills.add_skill(shadow_self)
             elif job == 'wiz':
+                player.job.job = 4
+                player.job.wizard_level += 1
+                shock_component = Skill(use_function=cast_shockwave, mana_cost=10,
+                                        damage=25, radius=3)
                 skill_component = Skill(use_function=cast_spell_fireball, mana_cost=10, skill_targeting=True,
                                         targeting_message=Message(
                                             'Left-click a target tile for the fireball, or right-click to cancel.',
@@ -255,31 +292,84 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                                         damage=25, radius=3)
                 x = entity.x
                 y = entity.y
+                shockwave = Entity(x,y,'?',libtcod.red, 'Shockwave',skill=shock_component)
                 fireball = Entity(x, y, '?', libtcod.red, 'Fireball', skill=skill_component)
+                if shockwave and shockwave_learned is False:
+                    shockwave_learned = True
+                    player.skills.add_skill(shockwave)
                 if fireball and fireball_learned is False:
                     fireball_learned = True
                     player.skills.add_skill(fireball)
             elif job == 'psy':
-                skill_component = Skill(use_function=cast_charm, hunger_cost=10, skill_targeting=True,
+                skill_component = Skill(use_function=cast_mind_confuse, skill_targeting=True,
                                         targeting_message=Message(
-                                            'Left-click a target tile to charm them, or right-click to cancel.',
+                                            'Left-click on an enemy to charm them, or right-click to cancel.',
                                             libtcod.light_cyan))
                 x = entity.x
                 y = entity.y
-                charm = Entity(x, y, '?', libtcod.red, 'Charm Enemy', skill=skill_component)
+                charm = Entity(x, y, '?', libtcod.red, 'Feeblemind', skill=skill_component)
                 player.fighter.base_psyche += 3
-                player.fighter.job = 5
+                player.job.job = 5
+                player.job.psychic_level += 1
                 skill_component = Skill(use_function=cast_mind_lightning, maximum_range=5,
                                         hunger_cost=40 + player.fighter.psyche / 2)
                 psybolt = Entity(0, 0, ' ', libtcod.yellow, 'PsyBolt', skill=skill_component)
                 if psybolt and psybolt_learned is False:
                     psybolt_learned = True
                     player.skills.add_skill(psybolt)
-                if charm and charm_learned is False:
+                if charm and charm_learned is False and player.job.psychic_level >= 4:
                     player.skills.add_skill(charm)
                     charm_learned = True
+            elif job == 'enchant':
+                skill_component = Skill(use_function=cast_bless, mana_cost=10, skill_targeting=True,
+                                        targeting_message=Message(
+                                            'Left-click a target tile to bless them, or right-click to cancel.',
+                                            libtcod.light_cyan))
+                x = entity.x
+                y = entity.y
+                bless = Entity(x, y, '?', libtcod.red, 'Bless', skill=skill_component)
+                skill_component = Skill(use_function=cast_doom, mana_cost=10, skill_targeting=True,
+                                        targeting_message=Message(
+                                            'Left-click a target tile to doom them, or right-click to cancel.',
+                                            libtcod.light_cyan))
+                x = entity.x
+                y = entity.y
+                doom = Entity(x, y, '?', libtcod.red, 'Doom', skill=skill_component)
+                clairvoyance_component = Skill(use_function=become_clairvoyant, mana_cost=10, skill_targeting=True,
+                                        targeting_message=Message(
+                                            'Left-click a target tile to doom them, or right-click to cancel.',
+                                            libtcod.light_cyan))
+                x = entity.x
+                y = entity.y
+                clairvoyant = Entity(x, y, '?', libtcod.red, 'Clairvoyance', skill=clairvoyance_component)
+                player.job.enchanter_level += 1
+                if bless_learned is False:
+                    bless_learned = True
+                    player.skills.add_skill(bless)
+                if clairvoyant_learned is False and player.job.enchanter_level >= 1:
+                    clairvoyant_learned = True
+                    player.skills.add_skill(clairvoyant)
+                if doom_learned is False and player.job.enchanter_level >= 10:
+                    doom_learned = True
+                    player.skills.add_skill(doom)
+            elif job == 'diva':
+                player.job.diva_level += 1
+                riposte_component = Skill(use_function=riposte)
+                ripostedance = Entity(0, 0, '?', libtcod.yellow, 'Riposte Dance', skill=riposte_component)
+                skill_component = Skill(use_function=poison_enemy, mana_cost=10, skill_targeting=True, maximum_range=1,
+                                        targeting_message=Message(
+                                            'Left-click a target tile to poison them, or right-click to cancel.',
+                                            libtcod.light_cyan))
+                x = entity.x
+                y = entity.y
+                cobrakiss = Entity(x, y, '?', libtcod.red, 'Kiss of the Cobra', skill=skill_component)
+                if ripostedance_learned is False and player.job.diva_level == 2:
+                    ripostedance_learned = True
+                    player.skills.add_skill(ripostedance)
+                if cobrakiss_learned is False:
+                    cobrakiss_learned = True
+                    player.skills.add_skill(cobrakiss)
             libtcod.console_flush()
-            libtcod.console_clear(con)
             game_state = GameStates.PLAYERS_TURN
 
         if character_creation:
@@ -308,7 +398,6 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 player.fighter.base_max_hp -= 75
                 player.fighter.race += 6
             libtcod.console_flush()
-            libtcod.console_clear(con)
             game_state = GameStates.GENDER_SELECTION
         # damn son thats a lot of menus
         # like a lot
@@ -326,7 +415,6 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 elif gender == 'a':
                     player.fighter.gender += 3
                 libtcod.console_flush()
-                libtcod.console_clear(con)
                 game_state = GameStates.PLAYERS_TURN
 
         if show_character_screen:
@@ -341,11 +429,9 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                                                         target_x=target_x, target_y=target_y)
                 player_turn_results.extend(item_use_results)
                 libtcod.console_flush()
-                libtcod.console_clear(con)
             elif right_click:
                 player_turn_results.append({'targeting_cancelled': True})
                 libtcod.console_flush()
-                libtcod.console_clear(con)
 
         if game_state == GameStates.SKILL_TARGETING:
             if left_click:
@@ -358,29 +444,23 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             elif right_click:
                 player_turn_results.append({'targeting_cancelled': True})
                 libtcod.console_flush()
-                libtcod.console_clear(con)
 
         if exit:
             if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.CHARACTER_SCREEN):
                 game_state = previous_game_state
                 libtcod.console_flush()
-                libtcod.console_clear(con)
             elif game_state == GameStates.SHOW_SKILL_MENU:
                 game_state = GameStates.PLAYERS_TURN
                 libtcod.console_flush()
-                libtcod.console_clear(con)
             elif game_state == GameStates.TARGETING:
                 player_turn_results.append({'targeting_cancelled': True})
                 libtcod.console_flush()
-                libtcod.console_clear(con)
             elif game_state == GameStates.SKILL_TARGETING:
                 player_turn_results.append({'targeting_cancelled': True})
                 libtcod.console_flush()
-                libtcod.console_clear(con)
             else:
                 save_game(player, entities, game_map, message_log, game_state)
                 libtcod.console_flush()
-                libtcod.console_clear(con)
 
                 return True
 
@@ -488,6 +568,15 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 player.fighter.stealthed = 0
 
             for entity in entities:
+                if entity.fighter:
+                    if entity.fighter.blessed == 1:
+                        entity.fighter.blessed_timer -= 1
+                        if entity.fighter.blessed_timer == 0:
+                            message_log.add_message(Message(
+                                'The {0}\'s shine fades away.'.format(entity.name),libtcod.red))
+                            entity.fighter.blessed = 0
+                            entity.fighter.bless_bonus = 0
+
                 if entity.ai:
                     enemy_turn_results = entity.ai.take_turn(player, fov_map, game_map, entities)
 
