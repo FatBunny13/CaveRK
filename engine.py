@@ -94,7 +94,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
         player_turn_results = []
 
 
-        if move and game_state == GameStates.PLAYERS_TURN:
+        if move and game_state == GameStates.PLAYERS_TURN and player.fighter.paralysis == 0:
             starvation_variable = 1
             player.fighter.nutrition -= 1
             dx, dy = move
@@ -163,6 +163,14 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
                 game_state = GameStates.ENEMY_TURN
 
+        elif move and game_state == GameStates.PLAYERS_TURN and player.fighter.paralysis == 1:
+                game_state = GameStates.ENEMY_TURN
+                player.fighter.paralysis_time -= 1
+                if player.fighter.paralysis_time == 0:
+                    player.fighter.paralysis = 0
+                    message_log.add_message(Message('You are no longer paralysed!', libtcod.yellow))
+                pass
+
         elif wait:
             game_state = GameStates.ENEMY_TURN
 
@@ -225,7 +233,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                     entities = game_map.next_floor(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
-                    libtcod.console_flush()
+                    libtcod.console_clear(con)
 
                     break
             else:
@@ -237,7 +245,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                     entities = game_map.previous_floor(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
-                    libtcod.console_flush()
+                    libtcod.console_clear(con)
 
                     break
             else:
