@@ -20,7 +20,7 @@ class Jobs:
 class Fighter:
     def __init__(self, hp, defense, power, agility,mana,base_psyche,attack_dice_minimum,attack_dice_maximum,ac,will,blessed=0,doomed=1,poison_timer=0,
                 clairvoyance=False,poisoned=0,blessed_timer=0,bless_bonus=0,starvation_bonus = 0,nutrition=0, gender=0,stealthed=0,riposte=0,
-                 riposte_time=0,race=0, xp=0,eat_function = None):
+                 riposte_time=0,race=0, xp=0,sleep=False,sleep_timer=0,paralysis=False,paralysis_time=0,eat_function = None):
         self.base_max_hp = hp
         self.hp = hp
         self.base_defense = defense
@@ -48,6 +48,10 @@ class Fighter:
         self.clairvoyance = clairvoyance
         self.riposte = riposte
         self.riposte_time = riposte_time
+        self.sleep = sleep
+        self.sleep_timer = sleep_timer
+        self.paralysis = paralysis
+        self.paralysis_time = paralysis_time
         self.eat_function = eat_function
 
     @property
@@ -235,6 +239,33 @@ class Fighter:
 
 
         return results
+
+    def sleep_attack(self,target):
+        sleep_attack_chance = randint(1,10)
+        sleep_defense_chance = randint(1,10)
+
+        if sleep_attack_chance + self.fighter.will > sleep_defense_chance + self.fighter.will:
+            target.fighter.sleep = True
+            target.fighter.sleep_timer = randint(10,35)
+
+    def paralysis_attack(self,target):
+        global paralysis_attack_chance
+        global paralysis_defense_chance
+        paralysis_attack_chance = randint(1,10)
+        paralysis_defense_chance = randint(1,10)
+
+        results = []
+
+        if paralysis_attack_chance + 50 > paralysis_defense_chance + self.will:
+            results.append({'message': Message('{0} paralysis the {1}.'.format(
+                self.owner.name.capitalize(), target.name), libtcod.white)})
+            target.fighter.paralysis = True
+            target.fighter.paralysis_time = randint(10,35)
+            paralysis_attack_chance = randint(1, 10)
+            paralysis_defense_chance = randint(1, 10)
+
+        return results
+
 
     def poison(self, target):
         global poisondamage
