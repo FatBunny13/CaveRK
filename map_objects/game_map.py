@@ -1,7 +1,7 @@
 import libtcodpy as libtcod
 from random import randint
 
-from components.ai import BasicMonster, SlimeMonster, ShrubMonster
+from components.ai import BasicMonster, SlimeMonster, ShrubMonster,SleepMonster
 from components.equipment import EquipmentSlots, Equipment
 from components.equippable import Equippable
 from fighter import Fighter
@@ -199,8 +199,9 @@ class GameMap:
         number_of_items = randint(0, max_items_per_room)
         monster_chances = {
                 'orc': 40,
+                'maiden': 20,
                 'troll': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
-                'stalker': 20,
+                'stalker': from_dungeon_level([[15, 3], [30, 5], [60, 7]],self.dungeon_level),
                 'fairy': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
                 'slime': from_dungeon_level([[20, 3], [30, 5], [60, 7]], self.dungeon_level),
                 'shrub': from_dungeon_level([[15, 0],[0, 1]], self.dungeon_level),
@@ -225,7 +226,7 @@ class GameMap:
             y = randint(room.y1 + 1, room.y2 - 1)
 
             # Check if an entity is already in that location
-            if not any([entity for entity in entities if entity.x == x and entity.y == y]):
+            if not any([entity for entity in entities if entity.x == x and entity.y == y]) and self.tiles[x][y].blocked is False:
                 monster_choice = random_choice_from_dict(monster_chances)
 
                 if monster_choice == 'orc':
@@ -239,6 +240,13 @@ class GameMap:
                     ai_component = BasicMonster()
 
                     monster = Entity(x, y, '@', libtcod.gray, 'Invisible Stalker', blocks=True,
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
+                elif monster_choice == 'maiden':
+                    fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
+                                                attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=3)
+                    ai_component = SleepMonster()
+
+                    monster = Entity(x, y, '@', libtcod.lighter_yellow, 'Blinding Maiden', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
                 elif monster_choice == 'troll':
                     fighter_component = Fighter(hp=50, defense=3, power=6, xp=100, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=8,ac= -3,will=2)
@@ -278,7 +286,7 @@ class GameMap:
             x = randint(room.x1, room.x2)
             y = randint(room.y1, room.y2)
 
-            if not any([entity for entity in entities if entity.x == x and entity.y == y]):
+            if not any([entity for entity in entities if entity.x == x and entity.y == y]) and self.tiles[x][y].blocked is False:
                 item_choice = random_choice_from_dict(item_chances)
 
                 if item_choice == 'healing_potion':
