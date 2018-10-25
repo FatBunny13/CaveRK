@@ -163,7 +163,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
                 game_state = GameStates.ENEMY_TURN
 
-        elif move and game_state == GameStates.PLAYERS_TURN and player.fighter.paralysis == 1:
+        elif game_state == GameStates.PLAYERS_TURN and player.fighter.paralysis == 1:
                 game_state = GameStates.ENEMY_TURN
                 player.fighter.paralysis_time -= 1
                 if player.fighter.paralysis_time == 0:

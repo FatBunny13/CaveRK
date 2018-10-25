@@ -20,7 +20,7 @@ class Jobs:
 class Fighter:
     def __init__(self, hp, defense, power, agility,mana,base_psyche,attack_dice_minimum,attack_dice_maximum,ac,will,blessed=0,doomed=1,poison_timer=0,
                 clairvoyance=False,poisoned=0,blessed_timer=0,bless_bonus=0,starvation_bonus = 0,nutrition=0, gender=0,stealthed=0,riposte=0,
-                 riposte_time=0,race=0, xp=0,sleep=False,sleep_timer=0,paralysis=False,paralysis_time=0,eat_function = None):
+                 riposte_time=0,race=0, xp=0,sleep=False,sleep_timer=0,paralysis=False,haste=False,haste_bonus=0,haste_time=0,paralysis_time=0,eat_function = None):
         self.base_max_hp = hp
         self.hp = hp
         self.base_defense = defense
@@ -52,6 +52,9 @@ class Fighter:
         self.sleep_timer = sleep_timer
         self.paralysis = paralysis
         self.paralysis_time = paralysis_time
+        self.haste = haste
+        self.haste_bonus = haste_bonus
+        self.haste_time = haste_time
         self.eat_function = eat_function
 
     @property
@@ -115,7 +118,7 @@ class Fighter:
         else:
             bonus = 0
 
-        return self.base_ac + bonus + (self.agility // 5)
+        return self.base_ac + self.haste_bonus + bonus + (self.agility // 5)
 
     @property
     def ac_agility_bonus(self):
@@ -256,13 +259,24 @@ class Fighter:
 
         results = []
 
-        if paralysis_attack_chance + 50 > paralysis_defense_chance + self.will:
+        if paralysis_attack_chance + self.will > paralysis_defense_chance + target.fighter.will:
             results.append({'message': Message('{0} paralysis the {1}.'.format(
                 self.owner.name.capitalize(), target.name), libtcod.white)})
             target.fighter.paralysis = True
             target.fighter.paralysis_time = randint(10,35)
             paralysis_attack_chance = randint(1, 10)
             paralysis_defense_chance = randint(1, 10)
+
+        return results
+
+    def haste_self(self):
+
+        results = []
+        results.append({'message': Message('{0} suddenly speeds up!.'.format(
+                self.owner.name.capitalize()), libtcod.white)})
+        self.haste = True
+        self.haste_bonus = self.ac
+        self.haste_time = randint(10,35)
 
         return results
 
