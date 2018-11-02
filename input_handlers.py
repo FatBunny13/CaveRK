@@ -30,6 +30,8 @@ def handle_keys(player,key, game_state):
         return handle_skill_keys(key)
     elif game_state == GameStates.SKILL_TARGETING:
         return handle_targeting_keys(key)
+    elif game_state == GameStates.ATTACK_MENU:
+        return handle_attack_menu(key)
 
     return {}
 
@@ -54,7 +56,7 @@ def handle_player_turn_keys(key):
         return {'move': (-1, 1)}
     elif key_char == 'n':
         return {'move': (1, 1)}
-    elif key_char == 'z':
+    elif key_char == '.':
         return {'wait': True}
 
     if key_char == 'g':
@@ -76,6 +78,9 @@ def handle_player_turn_keys(key):
 
     elif key_char == 'c':
         return {'show_character_screen': True}
+
+    elif key_char == 't':
+        return {'talk': True}
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         # Alt+Enter: toggle full screen
@@ -202,6 +207,17 @@ def handle_character_creation(key):
             return {'character_creation': 'change'}
         elif key_char == 'f':
             return {'character_creation': 'fae'}
+
+    return {}
+
+def handle_attack_menu(key):
+    if key:
+        key_char = chr(key.c)
+
+        if key_char == 'a':
+            return {'do_you_want_to_attack': 'yes'}
+        elif key_char == 'b':
+            return {'do_you_want_to_attack': 'no'}
 
     return {}
 

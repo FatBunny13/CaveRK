@@ -16,3 +16,5 @@ class GameStates(Enum):
     SKILL_SELECTION = 12
     SHOW_SKILL_MENU = 13
     SKILL_TARGETING = 13
+    ATTACK_MENU = 14
+    TALK_TARGETING = 15

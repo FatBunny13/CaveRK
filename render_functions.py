@@ -1,10 +1,11 @@
 import libtcodpy as libtcod
+import numpy
 
 from enum import Enum
 
 from game_states import GameStates
 
-from menus import character_screen, inventory_menu, level_up_menu, character_creation_menu, gender_selection_menu, job_selection_menu, skill_use_menu
+from menus import character_screen, inventory_menu, level_up_menu, character_creation_menu, gender_selection_menu, job_selection_menu, skill_use_menu,attack_menu
 
 
 class RenderOrder(Enum):
@@ -137,6 +138,10 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
     elif game_state == GameStates.SHOW_SKILL_MENU:
         skill_use_menu(con, 'What skill would you like to use?:', player, 40, screen_width,screen_height)
 
+    elif game_state == GameStates.ATTACK_MENU:
+        attack_menu(con, 'This creature is peaceful. Do you want to attack?:', player, 40, screen_width,screen_height)
+
+
 
 def clear_all(con, entities):
     for entity in entities:
@@ -144,7 +149,7 @@ def clear_all(con, entities):
 
 
 def draw_entity(con, entity, fov_map, game_map):
-    if libtcod.map_is_in_fov(fov_map, entity.x, entity.y) or (entity.stairs and game_map.tiles[entity.x][entity.y].explored) or (entity.upstairs and game_map.tiles[entity.x][entity.y].explored):
+    if fov_map.fov[entity.y, entity.x] or (entity.stairs and game_map.tiles[entity.x][entity.y].explored) or (entity.upstairs and game_map.tiles[entity.x][entity.y].explored):
         libtcod.console_set_default_foreground(con, entity.color)
         libtcod.console_put_char(con, entity.x, entity.y, entity.char, libtcod.BKGND_NONE)
 

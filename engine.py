@@ -16,6 +16,8 @@ from item_functions import riposte
 from components.skills import Skills
 from components.skill import Skill
 from entity import Entity
+from components.ai import PeacefulMonster,BasicMonster
+from talk_functions import talk_to_enemy
 
 
 def play_game(player, entities, game_map, message_log,game_state, con, panel, constants):
@@ -87,6 +89,8 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
         skill_selection = action.get('skill_selection')
         exit = action.get('exit')
         fullscreen = action.get('fullscreen')
+        do_you_want_to_attack = action.get('do_you_want_to_attack')
+        talk = action.get('talk')
 
         left_click = mouse_action.get('left_click')
         right_click = mouse_action.get('right_click')
@@ -152,15 +156,33 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
             if not game_map.is_blocked(destination_x, destination_y):
                 target = get_blocking_entities_at_location(entities, destination_x, destination_y)
-
                 if target:
-                    attack_results = player.fighter.attack(target)
-                    player_turn_results.extend(attack_results)
+                    if target.fighter.is_peaceful is False:
+                        attack_results = player.fighter.attack(target)
+                        player_turn_results.extend(attack_results)
+                        game_state = GameStates.ENEMY_TURN
+                    elif target.fighter.is_peaceful is True:
+                        game_state = GameStates.ATTACK_MENU
                 else:
                     player.move(dx, dy)
 
                     fov_recompute = True
 
+                    game_state = GameStates.ENEMY_TURN
+
+        elif talk:
+            message_log.add_message(Message('Click on a monster to talk. Right click to cancel talking'))
+            previous_game_state = GameStates.PLAYERS_TURN
+            game_state = GameStates.TALK_TARGETING
+
+
+        elif do_you_want_to_attack:
+            if do_you_want_to_attack == 'yes':
+                attack_results = player.fighter.attack(target)
+                player_turn_results.extend(attack_results)
+                target.fighter.is_peaceful = False
+                game_state = GameStates.ENEMY_TURN
+            else:
                 game_state = GameStates.ENEMY_TURN
 
         elif game_state == GameStates.PLAYERS_TURN and player.fighter.paralysis == 1:
@@ -262,7 +284,6 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             libtcod.console_flush()
             game_state = GameStates.JOB_SELECTION
 
-#For some reason the skil menu is linked here. I wonder why?
         if job:
             if job == 'pri':
                 player.fighter.base_max_hp += 20
@@ -455,6 +476,18 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 player_turn_results.append({'targeting_cancelled': True})
                 libtcod.console_flush()
 
+        if game_state == GameStates.TALK_TARGETING:
+            if left_click:
+                target_x, target_y = left_click
+
+                talk_results = talk_to_enemy(player=player,entities=entities, fov_map=fov_map,
+                                                        target_x=target_x, target_y=target_y)
+                player_turn_results.extend(talk_results)
+                libtcod.console_flush()
+            elif right_click:
+                player_turn_results.append({'targeting_cancelled': True})
+                libtcod.console_flush()
+
         if exit:
             if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.CHARACTER_SCREEN):
                 game_state = previous_game_state
@@ -466,6 +499,9 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 player_turn_results.append({'targeting_cancelled': True})
                 libtcod.console_flush()
             elif game_state == GameStates.SKILL_TARGETING:
+                player_turn_results.append({'targeting_cancelled': True})
+                libtcod.console_flush()
+            elif game_state == GameStates.TALK_TARGETING:
                 player_turn_results.append({'targeting_cancelled': True})
                 libtcod.console_flush()
             else:

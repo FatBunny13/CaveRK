@@ -93,6 +93,7 @@ def main_menu(con, background_image, screen_width, screen_height):
     menu(con, '', ['Start a game','Continue last game', 'Quit'], 24, screen_width, screen_height)
     
 def character_creation_menu(con, header, player, menu_width, screen_width, screen_height):
+
     options = ['Mern'.format(player.fighter.max_hp),
     		   'Avis '.format(player.fighter.max_hp),
     		   'Leprachaun'.format(player.fighter.max_hp),
@@ -103,6 +104,15 @@ def character_creation_menu(con, header, player, menu_width, screen_width, scree
 
 
     menu(con, header, options, menu_width, screen_width, screen_height)
+
+def attack_menu(con, header, player, menu_width, screen_width, screen_height):
+    options = ['Yes'.format(player.fighter.max_hp),
+    		   'No '.format(player.fighter.max_hp),]
+
+
+
+    menu(con, header, options, menu_width, screen_width, screen_height)
+
 
 
 def level_up_menu(con, header, player, menu_width, screen_width, screen_height):
