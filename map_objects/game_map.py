@@ -1,7 +1,7 @@
 import libtcodpy as libtcod
 from random import randint
 
-from components.ai import BasicMonster, SlimeMonster, ShrubMonster,SleepMonster
+from components.ai import BasicMonster, SlimeMonster, ShrubMonster,SleepMonster,HasteSelfMonster,PeacefulMonster
 from components.equipment import EquipmentSlots, Equipment
 from components.equippable import Equippable
 from fighter import Fighter
@@ -15,7 +15,7 @@ from game_messages import Message
 
 from item_functions import cast_confuse, cast_fireball, cast_lightning, heal, throw_shurikin
 
-from map_objects.rectangle import Rect
+from map_objects.rectangle import Rect, Square
 from map_objects.tile import Tile
 
 from random_utils import from_dungeon_level, random_choice_from_dict
@@ -25,17 +25,24 @@ from render_functions import RenderOrder
 
 class GameMap:
 
-    def __init__(self, width, height, dungeon_level=1):
+    def __init__(self, width, height, dungeon_level=1,village = False,overworld=False):
         self.width = width
         self.height = height
         self.tiles = self.initialize_tiles()
 
         self.dungeon_level = dungeon_level
+        self.village = village
+        self.overworld = overworld
 
     def initialize_tiles(self):
         tiles = [[Tile(True) for y in range(self.height)] for x in range(self.width)]
 
         return tiles
+
+    def create_tile(self, x,y):
+        # go through the tiles in the rectangle and make them passable
+            self.tiles[x][y].blocked = False
+            self.tiles[x][y].block_sight = False
 
     def make_map(self, max_rooms, room_min_size, room_max_size,max_maze_rooms,maze_min_size, maze_max_size, map_width, map_height, player, entities):
         if self.dungeon_level == 0:
@@ -99,6 +106,55 @@ class GameMap:
                     rooms.append(new_room)
                     num_rooms += 1
 
+        elif self.dungeon_level == -1:
+            p = open('village.txt')
+            contents = p.read()
+            center_of_last_room_x = None
+            center_of_last_room_y = None
+            stairs_component = Stairs(self.dungeon_level + 1)
+            down_stairs = Entity(2, 5, '>', libtcod.white, 'Stairs',
+                                 render_order=RenderOrder.STAIRS, stairs=stairs_component)
+            entities.append(down_stairs)
+
+            upstairs_component = Upstairs(self.dungeon_level + 1)
+            up_stairs = Entity(22, 5, '<', libtcod.white, 'Stairs',
+                               render_order=RenderOrder.UPSTAIRS, stairs=upstairs_component)
+            entities.append(up_stairs)
+
+            fighter_component = Fighter(hp=80, defense=20, power=5, xp=500, agility=5, mana=0, base_psyche=0,
+                                        attack_dice_minimum=4, attack_dice_maximum=8, ac=5, will=4,is_peaceful=True)
+            ai_component = BasicMonster()
+
+            leader = Entity(10, 5, '@', libtcod.hot_pink, 'The Duchess', blocks=True,
+                             render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
+            entities.append(leader)
+
+            fighter_component = Fighter(hp=10, power=5,defense=0, xp=10, agility=5, mana=0, base_psyche=0,
+                                        attack_dice_minimum=4, attack_dice_maximum=8, ac=1, will=0)
+            ai_component = BasicMonster()
+
+            bandit = Entity(11, 5, '@', libtcod.black, 'Bandit', blocks=True,
+                            render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
+            entities.append(bandit)
+            for tile_y, line in enumerate(contents.split('\n')):
+                for tile_x, tile_character in enumerate(line):
+                    if tile_character == '.':
+                        self.create_tile(tile_x,tile_y)
+                    if tile_character == '<':
+                        self.create_tile(tile_x,tile_y)
+                    elif tile_character =='>':
+                        entity_x = tile_x
+                        entity_y = tile_y
+                        player.x = entity_x
+                        player.y = entity_y
+                        print(player.y)
+                        print(player.x)
+                        self.create_tile(tile_x, tile_y)
+                        entities = [player]
+                        stairs = [up_stairs]
+                        self.place_tile_entities(tile_x,tile_y, entities)
+                        self.place_tile_entities(tile_x, tile_y, stairs)
+
         else:
             rooms = []
             num_rooms = 0
@@ -151,7 +207,7 @@ class GameMap:
                             self.create_v_tunnel(prev_y, new_y, new_x)
                         else:
                         # first move vertically, then horizontally
-                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_v_tunnel(prev_y,  new_y, prev_x)
                             self.create_h_tunnel(prev_x, new_x, new_y)
 
                     self.place_entities(new_room, entities)
@@ -193,13 +249,14 @@ class GameMap:
         min_items_per_room = from_dungeon_level([[1, 0]], self.dungeon_level)
 
         # Get a random number of monsters
-        number_of_monsters = randint(1, max_monsters_per_room)
+        number_of_monsters = randint(0, max_monsters_per_room)
 
         # Get a random number of items
         number_of_items = randint(0, max_items_per_room)
         monster_chances = {
-                'orc': 40,
+                'orc': 20,
                 'maiden': 20,
+                'mistmaiden': 40,
                 'troll': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
                 'stalker': from_dungeon_level([[15, 3], [30, 5], [60, 7]],self.dungeon_level),
                 'fairy': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
@@ -228,56 +285,66 @@ class GameMap:
             # Check if an entity is already in that location
             if not any([entity for entity in entities if entity.x == x and entity.y == y]) and self.tiles[x][y].blocked is False:
                 monster_choice = random_choice_from_dict(monster_chances)
+                if self.dungeon_level >= 0:
 
-                if monster_choice == 'orc':
-                    fighter_component = Fighter(hp=20, defense=2, power=5, xp=5000, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=4,ac=0,will=0)
-                    ai_component = BasicMonster()
+                    if monster_choice == 'orc':
+                        fighter_component = Fighter(hp=20, defense=2, power=5, xp=5000, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=4,ac=0,will=0,talk_message = 'hiya')
+                        ai_component = BasicMonster()
 
-                    monster = Entity(x, y, 'o', libtcod.desaturated_green, 'Orc', blocks=True,
+                        monster = Entity(x, y, 'o', libtcod.desaturated_green, 'Orc', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
-                elif monster_choice == 'stalker':
-                    fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=0,stealthed=1)
-                    ai_component = BasicMonster()
+                    elif monster_choice == 'stalker':
+                        fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=0,stealthed=1)
+                        ai_component = BasicMonster()
 
-                    monster = Entity(x, y, '@', libtcod.gray, 'Invisible Stalker', blocks=True,
+                        monster = Entity(x, y, '@', libtcod.gray, 'Invisible Stalker', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
-                elif monster_choice == 'maiden':
-                    fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
+                    elif monster_choice == 'maiden':
+                        fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
                                                 attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=3)
-                    ai_component = SleepMonster()
+                        ai_component = SleepMonster()
 
-                    monster = Entity(x, y, '@', libtcod.lighter_yellow, 'Blinding Maiden', blocks=True,
+                        monster = Entity(x, y, '@', libtcod.lighter_yellow, 'Blinding Maiden', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
-                elif monster_choice == 'troll':
-                    fighter_component = Fighter(hp=50, defense=3, power=6, xp=100, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=8,ac= -3,will=2)
-                    ai_component = BasicMonster()
+                    elif monster_choice == 'mistmaiden':
+                        fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
+                                                attack_dice_minimum=1, attack_dice_maximum=4, ac=5, will=3,talk_message = 'hi')
+                        ai_component = HasteSelfMonster()
 
-                    monster = Entity(x, y, 'T', libtcod.darker_green, 'Cave Troll', blocks=True, fighter=fighter_component,
-                                     render_order=RenderOrder.ACTOR, ai=ai_component)
-                elif monster_choice == 'stone':
-                    fighter_component = Fighter(hp=10, defense=25, power=8, xp=160, agility= -1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=2,ac= -3,will=0)
-                    ai_component = BasicMonster()
+                        monster = Entity(x, y, '@', libtcod.darker_blue, 'Mist Maiden', blocks=True,
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
+                    elif monster_choice == 'troll':
+                        fighter_component = Fighter(hp=50, defense=3, power=6, xp=100, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=8,ac= -3,will=2)
+                        ai_component = BasicMonster()
 
-                    monster = Entity(x, y, 'G', libtcod.gray, 'Stone Golem', blocks=True, fighter=fighter_component,
+                        monster = Entity(x, y, 'T', libtcod.darker_green, 'Cave Troll', blocks=True, fighter=fighter_component,
                                      render_order=RenderOrder.ACTOR, ai=ai_component)
-                elif monster_choice == 'slime':
-                    fighter_component = Fighter(hp=10, defense=25, power=8, xp=160, agility= 2,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=8,ac=1,will=1)
-                    ai_component = SlimeMonster()
+                    elif monster_choice == 'stone':
+                        fighter_component = Fighter(hp=10, defense=25, power=8, xp=160, agility= -1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=2,ac= -3,will=0)
+                        ai_component = BasicMonster()
 
-                    monster = Entity(x, y, 's', libtcod.green, 'Slime', blocks=True, fighter=fighter_component,
+                        monster = Entity(x, y, 'G', libtcod.gray, 'Stone Golem', blocks=True, fighter=fighter_component,
                                      render_order=RenderOrder.ACTOR, ai=ai_component)
-                elif monster_choice == 'shrub':
-                    fighter_component = Fighter(hp=10, defense=0, power=5, xp=160, agility= 3,mana = 0,base_psyche = 0,attack_dice_minimum=4,attack_dice_maximum=8,ac=-15,will=0)
-                    ai_component = ShrubMonster()
+                    elif monster_choice == 'slime':
+                        fighter_component = Fighter(hp=10, defense=25, power=8, xp=160, agility= 2,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=8,ac=1,will=1)
+                        ai_component = SlimeMonster()
 
-                    monster = Entity(x, y, '"', libtcod.desaturated_green, 'Thorn-Shrub', blocks=True, fighter=fighter_component,
+                        monster = Entity(x, y, 's', libtcod.green, 'Slime', blocks=True, fighter=fighter_component,
                                      render_order=RenderOrder.ACTOR, ai=ai_component)
-                else:
-                    fighter_component = Fighter(hp=10, defense=1, power=2, xp=100, agility=4,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=2,ac=10,will=0)
-                    ai_component = BasicMonster()
+                    elif monster_choice == 'shrub':
+                        fighter_component = Fighter(hp=10, defense=0, power=5, xp=160, agility= 3,mana = 0,base_psyche = 0,attack_dice_minimum=4,attack_dice_maximum=8,ac=-15,will=0)
+                        ai_component = ShrubMonster()
 
-                    monster = Entity(x, y, 'f', libtcod.black, 'Fairy', blocks=True,fighter=fighter_component,
+                        monster = Entity(x, y, '"', libtcod.desaturated_green, 'Thorn-Shrub', blocks=True, fighter=fighter_component,
                                      render_order=RenderOrder.ACTOR, ai=ai_component)
+                    else:
+                        fighter_component = Fighter(hp=10, defense=1, power=2, xp=100, agility=4,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=2,ac=10,will=0)
+                        ai_component = BasicMonster()
+
+                        monster = Entity(x, y, 'f', libtcod.black, 'Fairy', blocks=True,fighter=fighter_component,
+                                     render_order=RenderOrder.ACTOR, ai=ai_component)
+
+
 
 
                 entities.append(monster)
@@ -336,21 +403,167 @@ class GameMap:
 
                 entities.append(item)
 
+    def place_tile_entities(self, x,y, entities):
+        max_monsters_per_room = from_dungeon_level([ [1, 0],[2, 1], [3, 4], [5, 6]], self.dungeon_level)
+        max_items_per_room = from_dungeon_level([[0, 0], [3, 1]], self.dungeon_level)
+        min_items_per_room = from_dungeon_level([[1, 0]], self.dungeon_level)
+
+        # Get a random number of monsters
+        number_of_monsters = randint(0, 1)
+
+        # Get a random number of items
+        number_of_items = randint(0, 1)
+        monster_chances = {
+                'orc': 20,
+                'maiden': 20,
+                'mistmaiden': 40,
+                'troll': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
+                'stalker': from_dungeon_level([[15, 3], [30, 5], [60, 7]],self.dungeon_level),
+                'fairy': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
+                'slime': from_dungeon_level([[20, 3], [30, 5], [60, 7]], self.dungeon_level),
+                'shrub': from_dungeon_level([[15, 0],[0, 1]], self.dungeon_level),
+                'stone': from_dungeon_level([[5, 2], [10, 4]], self.dungeon_level)}
+
+
+
+        item_chances = {
+            'healing_potion': 35,
+            'sword': from_dungeon_level([[10, 1]], self.dungeon_level),
+            'shield': from_dungeon_level([[15, 8]], self.dungeon_level),
+            'lance': from_dungeon_level([[15, 3]], self.dungeon_level),
+            'rbrace': from_dungeon_level([[15, 3]], self.dungeon_level),
+            'lightning_scroll': from_dungeon_level([[25, 4]], self.dungeon_level),
+            'fireball_scroll': from_dungeon_level([[25, 6]], self.dungeon_level),
+            'confusion_scroll': from_dungeon_level([[10, 2]], self.dungeon_level)
+        }
+
+        for i in range(number_of_monsters):
+            # Choose a random location in the room
+
+            # Check if an entity is already in that location
+            if not any([entity for entity in entities if entity.x == x and entity.y == y]) and self.tiles[x][y].blocked is False:
+                monster_choice = random_choice_from_dict(monster_chances)
+                if self.dungeon_level >= 0:
+
+                    if monster_choice == 'orc':
+                        fighter_component = Fighter(hp=20, defense=2, power=5, xp=5000, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=4,ac=0,will=0)
+                        ai_component = BasicMonster()
+
+                        monster = Entity(x, y, 'o', libtcod.desaturated_green, 'Orc', blocks=True,
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
+                    elif monster_choice == 'stalker':
+                        fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=0,stealthed=1)
+                        ai_component = BasicMonster()
+
+                        monster = Entity(x, y, '@', libtcod.gray, 'Invisible Stalker', blocks=True,
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
+                    elif monster_choice == 'maiden':
+                        fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
+                                                attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=3)
+                        ai_component = SleepMonster()
+
+                        monster = Entity(x, y, '@', libtcod.lighter_yellow, 'Blinding Maiden', blocks=True,
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
+                    elif monster_choice == 'mistmaiden':
+                        fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
+                                                attack_dice_minimum=1, attack_dice_maximum=4, ac=5, will=3)
+                        ai_component = HasteSelfMonster()
+
+                        monster = Entity(x, y, '@', libtcod.darker_blue, 'Mist Maiden', blocks=True,
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
+                    elif monster_choice == 'troll':
+                        fighter_component = Fighter(hp=50, defense=3, power=6, xp=100, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=8,ac= -3,will=2)
+                        ai_component = BasicMonster()
+
+                        monster = Entity(x, y, 'T', libtcod.darker_green, 'Cave Troll', blocks=True, fighter=fighter_component,
+                                     render_order=RenderOrder.ACTOR, ai=ai_component)
+                    elif monster_choice == 'stone':
+                        fighter_component = Fighter(hp=10, defense=25, power=8, xp=160, agility= -1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=2,ac= -3,will=0)
+                        ai_component = BasicMonster()
+
+                        monster = Entity(x, y, 'G', libtcod.gray, 'Stone Golem', blocks=True, fighter=fighter_component,
+                                     render_order=RenderOrder.ACTOR, ai=ai_component)
+                    elif monster_choice == 'slime':
+                        fighter_component = Fighter(hp=10, defense=25, power=8, xp=160, agility= 2,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=8,ac=1,will=1)
+                        ai_component = SlimeMonster()
+
+                        monster = Entity(x, y, 's', libtcod.green, 'Slime', blocks=True, fighter=fighter_component,
+                                     render_order=RenderOrder.ACTOR, ai=ai_component)
+                    elif monster_choice == 'shrub':
+                        fighter_component = Fighter(hp=10, defense=0, power=5, xp=160, agility= 3,mana = 0,base_psyche = 0,attack_dice_minimum=4,attack_dice_maximum=8,ac=-15,will=0)
+                        ai_component = ShrubMonster()
+
+                        monster = Entity(x, y, '"', libtcod.desaturated_green, 'Thorn-Shrub', blocks=True, fighter=fighter_component,
+                                     render_order=RenderOrder.ACTOR, ai=ai_component)
+                    else:
+                        fighter_component = Fighter(hp=10, defense=1, power=2, xp=100, agility=4,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=2,ac=10,will=0)
+                        ai_component = BasicMonster()
+
+                        monster = Entity(x, y, 'f', libtcod.black, 'Fairy', blocks=True,fighter=fighter_component,
+                                     render_order=RenderOrder.ACTOR, ai=ai_component)
+
+
+
+
+                    entities.append(monster)
+
+        for i in range(number_of_items):
+
+            if not any([entity for entity in entities if entity.x == x and entity.y == y]) and self.tiles[x][y].blocked is False:
+                item_choice = random_choice_from_dict(item_chances)
+
+                if item_choice == 'healing_potion':
+                    item_component = Item(use_function=heal, amount=40)
+                    item = Entity(x, y, '!', libtcod.violet, 'Healing Potion', render_order=RenderOrder.ITEM,
+                                  item=item_component)
+                elif item_choice == 'sword':
+                    item_component = Item(use_function=None)
+                    equippable_component = Equippable(EquipmentSlots.MAIN_HAND and EquipmentSlots.OFF_HAND, power_bonus=3)
+                    item = Entity(x, y, '/', libtcod.white, 'Sword', equippable=equippable_component,item=item_component)
+                elif item_choice == 'lance':
+                    equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=6, defense_bonus=-5)
+                    item_component = Item(use_function=None)
+                    item = Entity(x, y, '/', libtcod.white, 'Lance', equippable=equippable_component,item=item_component)
+                elif item_choice == 'shield':
+                    item_component = Item(use_function=None)
+                    equippable_component = Equippable(EquipmentSlots.OFF_HAND, defense_bonus=4, agility_bonus =-3)
+                    item = Entity(x, y, '[', libtcod.darker_orange, 'Shield', equippable=equippable_component,item=item_component)
+                elif item_choice == 'rbrace':
+                    item_component = Item(use_function=None)
+                    equippable_component = Equippable(EquipmentSlots.RIGHT_BRACELET, defense_bonus=4, agility_bonus =-3)
+                    item = Entity(x, y, '[', libtcod.black, 'Right Bracelet of Defense', equippable=equippable_component,item=item_component)
+                elif item_choice == 'rlightbrace':
+                    item_component = Item(use_function=None)
+                    equippable_component = Equippable(EquipmentSlots.RIGHT_BRACELET, defense_bonus=1, agility_bonus=-1,)
+                    item = Entity(x, y, '[', libtcod.black, 'Rotten Right Bracelet',
+                                  equippable=equippable_component,item=item_component)
+                elif item_choice == 'fireball_scroll':
+                    item_component = Item(use_function=cast_fireball, targeting=True, targeting_message=Message(
+                        'Left-click a target tile for the fireball, or right-click to cancel.', libtcod.light_cyan),
+                                          damage=25, radius=3)
+                    item = Entity(x, y, '?', libtcod.red, 'Fireball Scroll', render_order=RenderOrder.ITEM,
+                                  item=item_component)
+                elif item_choice == 'confusion_scroll':
+                    item_component = Item(use_function=cast_confuse, targeting=True, targeting_message=Message(
+                        'Left-click an enemy to confuse it, or right-click to cancel.', libtcod.light_cyan))
+                    item = Entity(x, y, '?', libtcod.light_pink, 'Confusion Scroll', render_order=RenderOrder.ITEM,
+                                  item=item_component)
+                elif item_choice == 'lightning_scroll':
+                    item_component = Item(use_function=cast_lightning, damage=40, maximum_range=5)
+                    item = Entity(x, y, '?', libtcod.yellow, 'Lightning Scroll', render_order=RenderOrder.ITEM,
+                                  item=item_component)
+                else:
+                    item_component = Item(use_function=throw_shurikin, damage=20, maximum_range=10)
+                    item = Entity(x, y, '+', libtcod.gray, 'Shuriken', render_order=RenderOrder.ITEM,
+                                  item=item_component)
+
+                entities.append(item)
+
     def is_blocked(self, x, y):
         if self.tiles[x][y].blocked:
             return True
 
         return False
-
-    def scrolling_map(p, hs, s, m):
-    #Get the position of the camera in a scrolling map    
-        
-        if p < hs:
-            return 0
-        elif p >= m - hs:
-            return m - s
-        else:
-            return p - hs
 
     def next_floor(self, player, message_log, constants):
         self.dungeon_level += 1
