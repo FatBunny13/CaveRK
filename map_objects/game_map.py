@@ -10,7 +10,7 @@ from components.stairs import Stairs
 from components.upstair import Upstairs
 
 from entity import Entity
-
+from quest_list import starting_quest
 from game_messages import Message
 
 from item_functions import cast_confuse, cast_fireball, cast_lightning, heal, throw_shurikin
@@ -19,18 +19,23 @@ from map_objects.rectangle import Rect, Square
 from map_objects.tile import Tile
 
 from random_utils import from_dungeon_level, random_choice_from_dict
+from npc_list import leader,bandit,sprite_child_1,sprite_child_2,dapper_trashling,fancy_trashling,shy_giantess
 
 from render_functions import RenderOrder
+from static_npc_and_location_spawns import *
+
+
 
 
 class GameMap:
 
-    def __init__(self, width, height, dungeon_level=1,village = False,overworld=False):
+    def __init__(self, width, height, dungeon_level=1,red_cave_level=0,village = False,overworld=False):
         self.width = width
         self.height = height
         self.tiles = self.initialize_tiles()
 
         self.dungeon_level = dungeon_level
+        self.red_cave_level = red_cave_level
         self.village = village
         self.overworld = overworld
 
@@ -45,7 +50,275 @@ class GameMap:
             self.tiles[x][y].block_sight = False
 
     def make_map(self, max_rooms, room_min_size, room_max_size,max_maze_rooms,maze_min_size, maze_max_size, map_width, map_height, player, entities):
-        if self.dungeon_level == 0:
+        global players_stairs
+        if 3 >= self.red_cave_level >= 2:
+            self.village = False
+            rooms = []
+            num_rooms = 0
+
+            center_of_last_room_x = None
+            center_of_last_room_y = None
+
+            for r in range(max_rooms):
+                # random width and height
+                w = randint(room_min_size, room_max_size)
+                h = randint(room_min_size, room_max_size)
+                # random position without going out of the boundaries of the map
+                x = randint(0, map_width - w - 1)
+                y = randint(0, map_height - h - 1)
+
+                # "Rect" class makes rectangles easier to work with
+                new_room = Rect(x, y, w, h)
+
+                # run through the other rooms and see if they intersect with this one
+                for other_room in rooms:
+                    if new_room.intersect(other_room):
+                        break
+                else:
+                    # this means there are no intersections, so this room is valid
+
+                    # "paint" it to the map's tiles
+                    self.create_room(new_room)
+
+                    # center coordinates of new room, will be useful later
+                    (new_x, new_y) = new_room.center()
+
+                    center_of_last_room_x = new_x
+                    center_of_last_room_y = new_y
+
+                    if num_rooms == 0:
+                        # this is the first room, where the player starts at
+                        player.x = new_x
+                        player.y = new_y
+                    else:
+                        # all rooms after the first:
+                        # connect it to the previous room with a tunnel
+
+                        # center coordinates of previous room
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+
+                    self.place_red_cave_entities(new_room, entities)
+
+                    # finally, append the new room to the list
+                    rooms.append(new_room)
+                    num_rooms += 1
+
+            stairs_component = Stairs(self.red_cave_level + 1, red_cave_stairs=True)
+            down_stairs = Entity(center_of_last_room_x, center_of_last_room_y, '>', libtcod.darker_red, 'Stairs',
+                                 render_order=RenderOrder.STAIRS, stairs=stairs_component)
+            entities.append(down_stairs)
+
+            upstairs_component = Upstairs(self.red_cave_level + 1, red_cave_stairs=True)
+            up_stairs = Entity(player.x, player.y, '<', libtcod.darker_red, 'Stairs',
+                               render_order=RenderOrder.UPSTAIRS, upstairs=upstairs_component)
+            entities.append(up_stairs)
+
+        elif self.red_cave_level == 4:
+            self.village = False
+            rooms = []
+            num_rooms = 0
+
+            center_of_last_room_x = None
+            center_of_last_room_y = None
+
+            for r in range(max_rooms):
+                # random width and height
+                w = randint(room_min_size, room_max_size)
+                h = randint(room_min_size, room_max_size)
+                # random position without going out of the boundaries of the map
+                x = randint(0, map_width - w - 1)
+                y = randint(0, map_height - h - 1)
+
+                # "Rect" class makes rectangles easier to work with
+                new_room = Rect(x, y, w, h)
+
+                # run through the other rooms and see if they intersect with this one
+                for other_room in rooms:
+                    if new_room.intersect(other_room):
+                        break
+                else:
+                    # this means there are no intersections, so this room is valid
+
+                    # "paint" it to the map's tiles
+                    self.create_room(new_room)
+
+                    # center coordinates of new room, will be useful later
+                    (new_x, new_y) = new_room.center()
+
+                    center_of_last_room_x = new_x
+                    center_of_last_room_y = new_y
+
+                    if num_rooms == 0:
+                        # this is the first room, where the player starts at
+                        player.x = new_x
+                        player.y = new_y
+                    else:
+                        # all rooms after the first:
+                        # connect it to the previous room with a tunnel
+
+                        # center coordinates of previous room
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+
+                    self.place_red_cave_entities(new_room, entities)
+
+                    # finally, append the new room to the list
+                    rooms.append(new_room)
+                    num_rooms += 1
+
+            fighter_component = Fighter(hp=10, defense=1, power=2, xp=100, agility=4, mana=0, base_psyche=0,
+                                        attack_dice_minimum=1, attack_dice_maximum=2, ac=10, will=0,
+                                        talk_message='The Trash-King starts screaming in rage!')
+            ai_component = ShrubMonster(closest_distance=5)
+
+            trash_king = Entity(center_of_last_room_x, center_of_last_room_y, 'T', libtcod.gray, 'Trash-King',
+                                blocks=True,
+                                fighter=fighter_component,
+                                render_order=RenderOrder.ACTOR, ai=ai_component)
+            entities.append(trash_king)
+
+            upstairs_component = Upstairs(self.red_cave_level + 1, red_cave_stairs=True)
+            up_stairs = Entity(center_of_last_room_y, center_of_last_room_y, '<', libtcod.darker_red, 'Stairs',
+                               render_order=RenderOrder.UPSTAIRS, upstairs=upstairs_component)
+            entities.append(up_stairs)
+
+        elif self.red_cave_level == 1:
+            self.village = False
+            rooms = []
+            num_rooms = 0
+
+            center_of_last_room_x = None
+            center_of_last_room_y = None
+
+            for r in range(max_rooms):
+                # random width and height
+                w = randint(room_min_size, room_max_size)
+                h = randint(room_min_size, room_max_size)
+                # random position without going out of the boundaries of the map
+                x = randint(0, map_width - w - 1)
+                y = randint(0, map_height - h - 1)
+
+                # "Rect" class makes rectangles easier to work with
+                new_room = Rect(x, y, w, h)
+
+                # run through the other rooms and see if they intersect with this one
+                for other_room in rooms:
+                    if new_room.intersect(other_room):
+                        break
+                else:
+                    # this means there are no intersections, so this room is valid
+
+                    # "paint" it to the map's tiles
+                    self.create_room(new_room)
+
+                    # center coordinates of new room, will be useful later
+                    (new_x, new_y) = new_room.center()
+
+                    center_of_last_room_x = new_x
+                    center_of_last_room_y = new_y
+
+                    if num_rooms == 0:
+                        # this is the first room, where the player starts at
+                        player.x = new_x
+                        player.y = new_y
+                    else:
+                        # all rooms after the first:
+                        # connect it to the previous room with a tunnel
+
+                        # center coordinates of previous room
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+
+                    self.place_red_cave_entities(new_room, entities)
+
+                    # finally, append the new room to the list
+                    rooms.append(new_room)
+                    num_rooms += 1
+
+            stairs_component = Stairs(self.red_cave_level + 1, red_cave_stairs=True)
+            down_stairs = Entity(center_of_last_room_y, center_of_last_room_y, '>', libtcod.darker_red, 'Stairs',
+                                 render_order=RenderOrder.STAIRS, stairs=stairs_component)
+            entities.append(down_stairs)
+
+            upstairs_component = Upstairs(self.dungeon_level + 1, dungeon_stairs=True)
+            up_stairs = Entity(player.x, player.y, '<', libtcod.darker_red, 'Stairs back to Havoc',
+                               render_order=RenderOrder.UPSTAIRS, upstairs=upstairs_component)
+            entities.append(up_stairs)
+
+        elif self.dungeon_level == -1:
+            global farmer
+            farmer_spawns = 0
+            farmers_to_spawn = 1
+            p = open('village.txt')
+            contents = p.read()
+            center_of_last_room_x = None
+            center_of_last_room_y = None
+            stairs_component = Stairs(self.dungeon_level - 1,dungeon_stairs=True)
+            down_stairs = Entity(4, 5, '>', libtcod.darker_green, 'Stairs back to the Caves',
+                                 render_order=RenderOrder.STAIRS, stairs=stairs_component)
+            stairs_component = Stairs(self.dungeon_level - 1,red_cave_stairs=True)
+            red_cave_stairs = Entity(4, 21, '>', libtcod.darker_green, 'Stairs to the Red Cave',
+                                 render_order=RenderOrder.STAIRS, stairs=stairs_component)
+            entities.append(down_stairs)
+            entities.append(red_cave_stairs)
+            entities.append(leader)
+            entities.append(bandit)
+            entities.append(sprite_child_1)
+            entities.append(sprite_child_2)
+            entities.append(dapper_trashling)
+            entities.append(fancy_trashling)
+            entities.append(shy_giantess)
+            entities.append(stressed_mother)
+            entities.append(stressed_mother_2)
+            entities.append(old_farmer)
+            entities.append(old_farmer_2)
+            entities.append(horned_cloudie)
+            entities.append(horned_cloudie_2)
+            entities.append(horned_cloudie_3)
+            self.village = True
+            for tile_y, line in enumerate(contents.split('\n')):
+                for tile_x, tile_character in enumerate(line):
+                    if tile_character == '.':
+                        self.create_tile(tile_x,tile_y)
+                    elif tile_character == '<':
+                        self.create_tile(tile_x,tile_y)
+                    elif tile_character =='>':
+                        entity_x = tile_x
+                        entity_y = tile_y
+                        player.x = entity_x
+                        player.y = entity_y
+                        self.create_tile(tile_x, tile_y)
+                        entities = [player]
+        elif self.dungeon_level == 0:
+            self.village = False
             rooms = []
             num_rooms = 0
 
@@ -105,57 +378,8 @@ class GameMap:
                 # finally, append the new room to the list
                     rooms.append(new_room)
                     num_rooms += 1
-
-        elif self.dungeon_level == -1:
-            p = open('village.txt')
-            contents = p.read()
-            center_of_last_room_x = None
-            center_of_last_room_y = None
-            stairs_component = Stairs(self.dungeon_level + 1)
-            down_stairs = Entity(2, 5, '>', libtcod.white, 'Stairs',
-                                 render_order=RenderOrder.STAIRS, stairs=stairs_component)
-            entities.append(down_stairs)
-
-            upstairs_component = Upstairs(self.dungeon_level + 1)
-            up_stairs = Entity(22, 5, '<', libtcod.white, 'Stairs',
-                               render_order=RenderOrder.UPSTAIRS, stairs=upstairs_component)
-            entities.append(up_stairs)
-
-            fighter_component = Fighter(hp=80, defense=20, power=5, xp=500, agility=5, mana=0, base_psyche=0,
-                                        attack_dice_minimum=4, attack_dice_maximum=8, ac=5, will=4,is_peaceful=True)
-            ai_component = BasicMonster()
-
-            leader = Entity(10, 5, '@', libtcod.hot_pink, 'The Duchess', blocks=True,
-                             render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
-            entities.append(leader)
-
-            fighter_component = Fighter(hp=10, power=5,defense=0, xp=10, agility=5, mana=0, base_psyche=0,
-                                        attack_dice_minimum=4, attack_dice_maximum=8, ac=1, will=0)
-            ai_component = BasicMonster()
-
-            bandit = Entity(11, 5, '@', libtcod.black, 'Bandit', blocks=True,
-                            render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
-            entities.append(bandit)
-            for tile_y, line in enumerate(contents.split('\n')):
-                for tile_x, tile_character in enumerate(line):
-                    if tile_character == '.':
-                        self.create_tile(tile_x,tile_y)
-                    if tile_character == '<':
-                        self.create_tile(tile_x,tile_y)
-                    elif tile_character =='>':
-                        entity_x = tile_x
-                        entity_y = tile_y
-                        player.x = entity_x
-                        player.y = entity_y
-                        print(player.y)
-                        print(player.x)
-                        self.create_tile(tile_x, tile_y)
-                        entities = [player]
-                        stairs = [up_stairs]
-                        self.place_tile_entities(tile_x,tile_y, entities)
-                        self.place_tile_entities(tile_x, tile_y, stairs)
-
         else:
+            self.village = False
             rooms = []
             num_rooms = 0
 
@@ -210,20 +434,21 @@ class GameMap:
                             self.create_v_tunnel(prev_y,  new_y, prev_x)
                             self.create_h_tunnel(prev_x, new_x, new_y)
 
+
+
                     self.place_entities(new_room, entities)
 
                 # finally, append the new room to the list
                     rooms.append(new_room)
                     num_rooms += 1
-
-        stairs_component = Stairs(self.dungeon_level + 1)
+        stairs_component = Stairs(self.red_cave_level + 1,dungeon_stairs=True)
         down_stairs = Entity(center_of_last_room_x, center_of_last_room_y, '>', libtcod.white, 'Stairs',
-                             render_order=RenderOrder.STAIRS, stairs=stairs_component)
+                                render_order=RenderOrder.STAIRS, stairs=stairs_component)
         entities.append(down_stairs)
 
-        upstairs_component = Upstairs(self.dungeon_level + 1)
+        upstairs_component = Upstairs(self.red_cave_level + 1,dungeon_stairs=True)
         up_stairs = Entity(player.x, player.y, '<', libtcod.white, 'Stairs',
-                             render_order=RenderOrder.UPSTAIRS, stairs=upstairs_component)
+                                render_order=RenderOrder.UPSTAIRS, upstairs=upstairs_component)
         entities.append(up_stairs)
 
     def create_room(self, room):
@@ -255,8 +480,8 @@ class GameMap:
         number_of_items = randint(0, max_items_per_room)
         monster_chances = {
                 'orc': 20,
-                'maiden': 20,
-                'mistmaiden': 40,
+                'maiden': from_dungeon_level([[5, 6], [10, 5], [1, 7]], self.dungeon_level),
+                'mistmaiden': from_dungeon_level([[5, 6], [10, 5], [1, 7]], self.dungeon_level),
                 'troll': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
                 'stalker': from_dungeon_level([[15, 3], [30, 5], [60, 7]],self.dungeon_level),
                 'fairy': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
@@ -333,7 +558,7 @@ class GameMap:
                                      render_order=RenderOrder.ACTOR, ai=ai_component)
                     elif monster_choice == 'shrub':
                         fighter_component = Fighter(hp=10, defense=0, power=5, xp=160, agility= 3,mana = 0,base_psyche = 0,attack_dice_minimum=4,attack_dice_maximum=8,ac=-15,will=0)
-                        ai_component = ShrubMonster()
+                        ai_component = ShrubMonster(closest_distance=5)
 
                         monster = Entity(x, y, '"', libtcod.desaturated_green, 'Thorn-Shrub', blocks=True, fighter=fighter_component,
                                      render_order=RenderOrder.ACTOR, ai=ai_component)
@@ -403,111 +628,79 @@ class GameMap:
 
                 entities.append(item)
 
-    def place_tile_entities(self, x,y, entities):
-        max_monsters_per_room = from_dungeon_level([ [1, 0],[2, 1], [3, 4], [5, 6]], self.dungeon_level)
-        max_items_per_room = from_dungeon_level([[0, 0], [3, 1]], self.dungeon_level)
-        min_items_per_room = from_dungeon_level([[1, 0]], self.dungeon_level)
+    def place_red_cave_entities(self, room, entities):
+        max_monsters_per_room = from_dungeon_level([ [1, 0],[2, 1], [3, 4], [5, 6]], self.red_cave_level)
+        max_items_per_room = from_dungeon_level([[0, 0], [3, 1]], self.red_cave_level)
+        min_items_per_room = from_dungeon_level([[1, 0]], self.red_cave_level)
 
         # Get a random number of monsters
-        number_of_monsters = randint(0, 1)
+        number_of_monsters = randint(0, max_monsters_per_room)
 
         # Get a random number of items
-        number_of_items = randint(0, 1)
+        number_of_items = randint(0, max_items_per_room)
         monster_chances = {
-                'orc': 20,
-                'maiden': 20,
-                'mistmaiden': 40,
-                'troll': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
-                'stalker': from_dungeon_level([[15, 3], [30, 5], [60, 7]],self.dungeon_level),
-                'fairy': from_dungeon_level([[15, 3], [30, 5], [60, 7]], self.dungeon_level),
-                'slime': from_dungeon_level([[20, 3], [30, 5], [60, 7]], self.dungeon_level),
-                'shrub': from_dungeon_level([[15, 0],[0, 1]], self.dungeon_level),
-                'stone': from_dungeon_level([[5, 2], [10, 4]], self.dungeon_level)}
+                'trash': from_dungeon_level([[5, 1], [6, 2], [2, 3]], self.red_cave_level),
+                'trashwizard': from_dungeon_level([[1, 1], [3, 2], [6, 3]], self.red_cave_level),
+                'mole': from_dungeon_level([[0, 1], [3, 2], [6, 3]], self.red_cave_level),
+                'turret': from_dungeon_level([[3, 1], [5, 5], [8, 3]], self.red_cave_level)}
 
 
 
         item_chances = {
             'healing_potion': 35,
-            'sword': from_dungeon_level([[10, 1]], self.dungeon_level),
-            'shield': from_dungeon_level([[15, 8]], self.dungeon_level),
-            'lance': from_dungeon_level([[15, 3]], self.dungeon_level),
-            'rbrace': from_dungeon_level([[15, 3]], self.dungeon_level),
-            'lightning_scroll': from_dungeon_level([[25, 4]], self.dungeon_level),
-            'fireball_scroll': from_dungeon_level([[25, 6]], self.dungeon_level),
-            'confusion_scroll': from_dungeon_level([[10, 2]], self.dungeon_level)
+            'sword': from_dungeon_level([[10, 1]], self.red_cave_level),
+            'shield': from_dungeon_level([[15, 8]], self.red_cave_level),
+            'lance': from_dungeon_level([[15, 3]], self.red_cave_level),
+            'rbrace': from_dungeon_level([[15, 3]], self.red_cave_level),
+            'lightning_scroll': from_dungeon_level([[25, 4]], self.red_cave_level),
+            'fireball_scroll': from_dungeon_level([[25, 6]], self.red_cave_level),
+            'confusion_scroll': from_dungeon_level([[10, 2]], self.red_cave_level)
         }
 
         for i in range(number_of_monsters):
             # Choose a random location in the room
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
 
             # Check if an entity is already in that location
             if not any([entity for entity in entities if entity.x == x and entity.y == y]) and self.tiles[x][y].blocked is False:
                 monster_choice = random_choice_from_dict(monster_chances)
-                if self.dungeon_level >= 0:
 
-                    if monster_choice == 'orc':
-                        fighter_component = Fighter(hp=20, defense=2, power=5, xp=5000, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=4,ac=0,will=0)
+                if monster_choice == 'trash':
+                        fighter_component = Fighter(hp=20, defense=2, power=5, xp=100, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=2,attack_dice_maximum=6,ac=3,will=3,talk_message = 'The Trash Bandit screeches')
                         ai_component = BasicMonster()
 
-                        monster = Entity(x, y, 'o', libtcod.desaturated_green, 'Orc', blocks=True,
+                        monster = Entity(x, y, 't', libtcod.desaturated_green, 'Trash Bandit', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
-                    elif monster_choice == 'stalker':
-                        fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=0,stealthed=1)
-                        ai_component = BasicMonster()
-
-                        monster = Entity(x, y, '@', libtcod.gray, 'Invisible Stalker', blocks=True,
-                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
-                    elif monster_choice == 'maiden':
-                        fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
-                                                attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=3)
+                elif monster_choice == 'trashwizard':
+                        fighter_component = Fighter(hp=15, defense=2, power=5, xp=100, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=3, ac=0, will=0,stealthed=0,talk_message='The Trash Bandit screeches')
                         ai_component = SleepMonster()
 
-                        monster = Entity(x, y, '@', libtcod.lighter_yellow, 'Blinding Maiden', blocks=True,
+                        monster = Entity(x, y, 't', libtcod.gray, 'Trash Bandit Witchdoctor', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
-                    elif monster_choice == 'mistmaiden':
-                        fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
-                                                attack_dice_minimum=1, attack_dice_maximum=4, ac=5, will=3)
+                elif monster_choice == 'mole':
+                        fighter_component = Fighter(hp=5, defense=2, power=5, xp=100, agility=1, mana=0, base_psyche=0,
+                                                attack_dice_minimum=1, attack_dice_maximum=5, ac=4, will= -1, stealthed=0,
+                                                talk_message='The Fuzzy-Screecher screams and giggles')
                         ai_component = HasteSelfMonster()
 
-                        monster = Entity(x, y, '@', libtcod.darker_blue, 'Mist Maiden', blocks=True,
+                        monster = Entity(x, y, 's', libtcod.darker_amber, 'Fuzzy-Screecher', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
-                    elif monster_choice == 'troll':
-                        fighter_component = Fighter(hp=50, defense=3, power=6, xp=100, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=8,ac= -3,will=2)
-                        ai_component = BasicMonster()
+                elif monster_choice == 'turret':
+                        fighter_component = Fighter(hp=10, defense=1, power=2, xp=100, agility=4,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=2,ac=10,will=0,talk_message='The Bone Turret whirrs loudly')
+                        ai_component = ShrubMonster(closest_distance=5)
 
-                        monster = Entity(x, y, 'T', libtcod.darker_green, 'Cave Troll', blocks=True, fighter=fighter_component,
-                                     render_order=RenderOrder.ACTOR, ai=ai_component)
-                    elif monster_choice == 'stone':
-                        fighter_component = Fighter(hp=10, defense=25, power=8, xp=160, agility= -1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=2,ac= -3,will=0)
-                        ai_component = BasicMonster()
-
-                        monster = Entity(x, y, 'G', libtcod.gray, 'Stone Golem', blocks=True, fighter=fighter_component,
-                                     render_order=RenderOrder.ACTOR, ai=ai_component)
-                    elif monster_choice == 'slime':
-                        fighter_component = Fighter(hp=10, defense=25, power=8, xp=160, agility= 2,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=8,ac=1,will=1)
-                        ai_component = SlimeMonster()
-
-                        monster = Entity(x, y, 's', libtcod.green, 'Slime', blocks=True, fighter=fighter_component,
-                                     render_order=RenderOrder.ACTOR, ai=ai_component)
-                    elif monster_choice == 'shrub':
-                        fighter_component = Fighter(hp=10, defense=0, power=5, xp=160, agility= 3,mana = 0,base_psyche = 0,attack_dice_minimum=4,attack_dice_maximum=8,ac=-15,will=0)
-                        ai_component = ShrubMonster()
-
-                        monster = Entity(x, y, '"', libtcod.desaturated_green, 'Thorn-Shrub', blocks=True, fighter=fighter_component,
-                                     render_order=RenderOrder.ACTOR, ai=ai_component)
-                    else:
-                        fighter_component = Fighter(hp=10, defense=1, power=2, xp=100, agility=4,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=2,ac=10,will=0)
-                        ai_component = BasicMonster()
-
-                        monster = Entity(x, y, 'f', libtcod.black, 'Fairy', blocks=True,fighter=fighter_component,
+                        monster = Entity(x, y, 'T', libtcod.white, 'Bone Turret', blocks=True,fighter=fighter_component,
                                      render_order=RenderOrder.ACTOR, ai=ai_component)
 
 
 
 
-                    entities.append(monster)
+                entities.append(monster)
 
         for i in range(number_of_items):
+            x = randint(room.x1, room.x2)
+            y = randint(room.y1, room.y2)
 
             if not any([entity for entity in entities if entity.x == x and entity.y == y]) and self.tiles[x][y].blocked is False:
                 item_choice = random_choice_from_dict(item_chances)
@@ -559,6 +752,9 @@ class GameMap:
 
                 entities.append(item)
 
+    def place_tile_entities(self, x,y,entities, entity):
+        entities.append(entity)
+
     def is_blocked(self, x, y):
         if self.tiles[x][y].blocked:
             return True
@@ -580,6 +776,49 @@ class GameMap:
 
         message_log.add_message(Message('You take a moment to rest, and recover your strength.', libtcod.light_violet))
 
+        for entity in entities:
+            for stairs in entities:
+                if self.dungeon_level == -1:
+                    break
+                elif entity.stairs and stairs.upstairs:
+                    entity.x = stairs.x
+                    entity.y = stairs.y
+
+        for entity in entities:
+            if entity.upstairs:
+                entity.x = player.x
+                entity.y = player.y
+
+
+        return entities
+
+    def next_red_cave_floor(self, player, message_log, constants):
+        self.dungeon_level = 0
+        self.red_cave_level += 1
+        entities = [player]
+
+        self.tiles = self.initialize_tiles()
+        self.make_map(constants['max_rooms'], constants['room_min_size'], constants['room_max_size'],
+                      constants['max_maze_rooms'], constants['maze_min_size'], constants['maze_max_size'],
+                      constants['map_width'], constants['map_height'], player, entities)
+        libtcod.console_flush()
+        libtcod.console_clear(constants)
+
+        player.fighter.heal(player.fighter.max_hp // 2)
+
+        message_log.add_message(Message('You take a moment to rest, and recover your strength.', libtcod.light_violet))
+
+        for entity in entities:
+            for stairs in entities:
+                if entity.stairs and stairs.upstairs:
+                    entity.x = stairs.x
+                    entity.y = stairs.y
+
+        for entity in entities:
+            if entity.upstairs:
+                entity.x = player.x
+                entity.y = player.y
+
         return entities
 
     def previous_floor(self, player, message_log, constants):
@@ -594,5 +833,43 @@ class GameMap:
         player.fighter.heal(player.fighter.max_hp // 2)
 
         message_log.add_message(Message('You take a moment to rest, and recover your strength.', libtcod.light_violet))
+
+        for entity in entities:
+            for stairs in entities:
+                if entity.upstairs and stairs.stairs and self.dungeon_level != -1:
+                    entity.x = stairs.x
+                    entity.y = stairs.y
+
+        for entity in entities:
+            if entity.stairs and self.dungeon_level != -1:
+                entity.x = player.x
+                entity.y = player.y
+
+
+        return entities
+    def previous_red_cave_floor(self, player, message_log, constants):
+        self.dungeon_level = None
+        self.red_cave_level -= 1
+        entities = [player]
+
+        self.tiles = self.initialize_tiles()
+        self.make_map(constants['max_rooms'], constants['room_min_size'], constants['room_max_size'],
+                      constants['max_maze_rooms'], constants['maze_min_size'], constants['maze_max_size'],
+                      constants['map_width'], constants['map_height'],player, entities,)
+
+        player.fighter.heal(player.fighter.max_hp // 2)
+
+        message_log.add_message(Message('You take a moment to rest, and recover your strength.', libtcod.light_violet))
+
+        for entity in entities:
+            for stairs in entities:
+                if entity.upstairs and stairs.stairs:
+                    entity.x = stairs.x
+                    entity.y = stairs.y
+
+        for entity in entities:
+            if entity.stairs:
+                entity.x = player.x
+                entity.y = player.y
 
         return entities
