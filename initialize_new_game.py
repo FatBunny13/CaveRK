@@ -9,6 +9,7 @@ from components.inventory import Inventory
 from components.level import Level
 from components.skills import Skills
 from components.skill import Skill
+from components.quests import Quests
 
 
 from entity import Entity
@@ -21,6 +22,8 @@ from game_states import GameStates
 
 from map_objects.game_map import GameMap
 from character import Gender
+from quest_list import starting_quest
+from game_variables import GameVariables
 
 
 
@@ -68,7 +71,9 @@ def get_constants():
         'dark_wall': libtcod.Color(0, 0, 100),
         'dark_ground': libtcod.Color(50, 50, 150),
         'light_wall': libtcod.Color(101, 101, 101),
-        'light_ground': libtcod.Color(148, 158, 148)
+        'light_ground': libtcod.Color(148, 158, 148),
+        'red_wall': libtcod.Color(102, 0, 0),
+        'red_ground': libtcod.Color(91, 0, 0)
     }
 
     constants = {
@@ -103,24 +108,27 @@ def get_constants():
 
 
 def get_game_variables(constants):
-    fighter_component = Fighter(hp=100, defense=1, power=5, agility=1,attack_dice_minimum=1,attack_dice_maximum=2,ac=-3,will=1, mana = 10, nutrition=500, base_psyche = 2, starvation_bonus = 0,riposte=0)
+    fighter_component = Fighter(hp=50, defense=1, power=5, agility=1,attack_dice_minimum=1,attack_dice_maximum=2,ac=0,will=0, mana = 10, nutrition=500, base_psyche = 2, starvation_bonus = 0,riposte=0)
     inventory_component = Inventory(26)
     skills_component = Skills(15)
     level_component = Level()
     job_component = Jobs()
     equipment_component = Equipment()
+    quests_component = Quests(26)
+    game_variables_component = GameVariables()
     player = Entity(0, 0, '@', libtcod.white, 'Player', blocks=True,player=True, render_order=RenderOrder.ACTOR,
                     fighter=fighter_component, inventory=inventory_component, level=level_component,
-                    equipment=equipment_component, skills=skills_component,job=job_component)
+                    equipment=equipment_component, skills=skills_component,job=job_component,quests=quests_component,
+                    has_game_variables=game_variables_component)
     entities = [player]
 
-    equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=4,damage=random.randint(1,4))
+    equippable_component = Equippable(EquipmentSlots.MAIN_HAND,minimum_hit_dice=1,maximum_hit_dice=4)
     item_component = Item(use_function=None)
     dagger = Entity(0, 0, '/', libtcod.sky, 'Carving Knife', equippable=equippable_component,item=item_component)
-    equippable_component = Equippable(EquipmentSlots.OFF_HAND, defense_bonus=1, agility_bonus=-1)
+    equippable_component = Equippable(EquipmentSlots.OFF_HAND, ac_bonus=1, will_bonus= -1)
     item_component = Item(use_function=None)
     buckler = Entity(0, 0, '{', libtcod.sky, 'Buckler', equippable=equippable_component,item=item_component)
-    equippable_component = Equippable(EquipmentSlots.ARMOUR, ac_bonus= 1, will_bonus=1)
+    equippable_component = Equippable(EquipmentSlots.ARMOUR, ac_bonus= 1, will_bonus=0)
     item_component = Item(use_function=None)
     robe = Entity(0, 0, '{', libtcod.sky, 'Peasant Garments', equippable=equippable_component, item=item_component)
     player.inventory.add_item(dagger)
@@ -129,6 +137,7 @@ def get_game_variables(constants):
     player.equipment.toggle_equip(buckler)
     player.inventory.add_item(robe)
     player.equipment.toggle_equip(robe)
+    player.quests.add_quest(starting_quest)
     game_map = GameMap(constants['map_width'], constants['map_height'])
     game_map.make_map(constants['max_rooms'], constants['room_min_size'], constants['room_max_size'],
                       constants['max_maze_rooms'], constants['maze_min_size'], constants['maze_max_size'],

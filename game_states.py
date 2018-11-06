@@ -18,3 +18,4 @@ class GameStates(Enum):
     SKILL_TARGETING = 13
     ATTACK_MENU = 14
     TALK_TARGETING = 15
+    QUEST_MENU = 16

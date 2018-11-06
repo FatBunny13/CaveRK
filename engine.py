@@ -18,7 +18,8 @@ from components.skill import Skill
 from entity import Entity
 from components.ai import PeacefulMonster,BasicMonster
 from talk_functions import talk_to_enemy
-
+from npc_list import leader
+from quest_list import starting_quest
 
 def play_game(player, entities, game_map, message_log,game_state, con, panel, constants):
     fov_recompute = True
@@ -33,6 +34,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
     clairvoyant_learned = False
     cobrakiss_learned = False
     ripostedance_learned = False
+    player_has_reached_village = False
 
     fov_map = initialize_fov(game_map)
 
@@ -91,6 +93,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
         fullscreen = action.get('fullscreen')
         do_you_want_to_attack = action.get('do_you_want_to_attack')
         talk = action.get('talk')
+        show_quests = action.get('show_quests')
 
         left_click = mouse_action.get('left_click')
         right_click = mouse_action.get('right_click')
@@ -133,6 +136,13 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                     if entity.fighter.poison_time == 0:
                         entity.fighter.poison = 0
 
+            for entity in entities:
+                if entity.fighter and entity.ai and entity.fighter.paralysis == 1:
+                    entity.fighter.paralysis_time -= 1
+                    if entity.fighter.paralysis_time == 0:
+                        entity.fighter.paralysis = 0
+                        message_log.add_message(Message('The {0}!'.format(entity.name), libtcod.yellow))
+                    pass
 
 
 
@@ -220,6 +230,11 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             game_state = GameStates.SHOW_INVENTORY
             libtcod.console_flush()
 
+        if show_quests:
+            previous_game_state = game_state
+            game_state = GameStates.QUEST_MENU
+            libtcod.console_flush()
+
         if use_skills:
             previous_game_state = game_state
             game_state = GameStates.SHOW_SKILL_MENU
@@ -251,8 +266,15 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
         if take_stairs and game_state == GameStates.PLAYERS_TURN:
             for entity in entities:
-                if entity.stairs and entity.x == player.x and entity.y == player.y:
+                if entity.stairs and entity.stairs.dungeon_stairs == True and entity.x == player.x and entity.y == player.y:
                     entities = game_map.next_floor(player, message_log, constants)
+                    fov_map = initialize_fov(game_map)
+                    fov_recompute = True
+                    libtcod.console_clear(con)
+
+                    break
+                elif entity.stairs and entity.stairs.red_cave_stairs == True and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.next_red_cave_floor(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
                     libtcod.console_clear(con)
@@ -263,8 +285,15 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
         if take_upstairs and game_state == GameStates.PLAYERS_TURN:
             for entity in entities:
-                if entity.stairs and entity.x == player.x and entity.y == player.y:
+                if entity.upstairs and entity.upstairs.dungeon_stairs == True and entity.x == player.x and entity.y == player.y:
                     entities = game_map.previous_floor(player, message_log, constants)
+                    fov_map = initialize_fov(game_map)
+                    fov_recompute = True
+                    libtcod.console_clear(con)
+
+                    break
+                elif entity.upstairs and entity.upstairs.red_cave_stairs == True and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.previous_red_cave_floor(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
                     libtcod.console_clear(con)
@@ -484,6 +513,16 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                                                         target_x=target_x, target_y=target_y)
                 player_turn_results.extend(talk_results)
                 libtcod.console_flush()
+                print(player_has_reached_village)
+                for entity in entities:
+                    if leader.x == target_x and leader.y == target_y and player_has_reached_village == False:
+                        leader.fighter.talk_message =('I can\'t believe you made it out! We need your help!')
+                        player_has_reached_village = True
+                        player.fighter.xp += 50
+                        starting_quest.completed = True
+                        for quest in player.quests.quests:
+                            player.quests.remove_quest(starting_quest)
+
             elif right_click:
                 player_turn_results.append({'targeting_cancelled': True})
                 libtcod.console_flush()
@@ -503,6 +542,9 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 libtcod.console_flush()
             elif game_state == GameStates.TALK_TARGETING:
                 player_turn_results.append({'targeting_cancelled': True})
+                libtcod.console_flush()
+            elif game_state == GameStates.QUEST_MENU:
+                game_state = GameStates.PLAYERS_TURN
                 libtcod.console_flush()
             else:
                 save_game(player, entities, game_map, message_log, game_state)

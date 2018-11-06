@@ -32,6 +32,8 @@ def handle_keys(player,key, game_state):
         return handle_targeting_keys(key)
     elif game_state == GameStates.ATTACK_MENU:
         return handle_attack_menu(key)
+    elif game_state == GameStates.QUEST_MENU:
+        return handle_quest_menu_keys(key)
 
     return {}
 
@@ -58,12 +60,12 @@ def handle_player_turn_keys(key):
         return {'move': (1, 1)}
     elif key_char == '.':
         return {'wait': True}
-
-    if key_char == 'g':
+    elif key_char == 'g':
         return {'pickup': True}
-    if key_char == 's':
+    elif key_char == 's':
         return {'use_skills': True}
-
+    elif key_char == 'q':
+        return {'show_quests': True}
     elif key_char == 'i':
         return {'show_inventory': True}
 
@@ -123,6 +125,16 @@ def handle_inventory_keys(key):
     if index >= 0:
         return {'inventory_index': index}
 
+    if key.vk == libtcod.KEY_ENTER and key.lalt:
+        # Alt+Enter: toggle full screen
+        return {'fullscreen': True}
+    elif key.vk == libtcod.KEY_ESCAPE:
+        # Exit the menu
+        return {'exit': True}
+
+    return {}
+
+def handle_quest_menu_keys(key):
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         # Alt+Enter: toggle full screen
         return {'fullscreen': True}

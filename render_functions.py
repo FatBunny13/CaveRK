@@ -5,7 +5,7 @@ from enum import Enum
 
 from game_states import GameStates
 
-from menus import character_screen, inventory_menu, level_up_menu, character_creation_menu, gender_selection_menu, job_selection_menu, skill_use_menu,attack_menu
+from menus import character_screen, inventory_menu, level_up_menu, character_creation_menu, gender_selection_menu, job_selection_menu, skill_use_menu,attack_menu,quest_menu
 
 
 class RenderOrder(Enum):
@@ -49,6 +49,14 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
             for x in range(game_map.width):
                 visible = libtcod.map_is_in_fov(fov_map, x, y)
                 wall = game_map.tiles[x][y].block_sight
+
+                if visible and game_map.red_cave_level > 0:
+                    if wall:
+                        libtcod.console_set_char_background(con, x, y, colors['red_wall'], libtcod.BKGND_SET)
+                    else:
+                        libtcod.console_set_char_background(con, x, y, colors['red_ground'], libtcod.BKGND_SET)
+
+                    game_map.tiles[x][y].explored = True
 
                 if visible:
                     if wall:
@@ -140,6 +148,10 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
 
     elif game_state == GameStates.ATTACK_MENU:
         attack_menu(con, 'This creature is peaceful. Do you want to attack?:', player, 40, screen_width,screen_height)
+
+    if game_state == GameStates.QUEST_MENU:
+        quest_menu(con, 'These are your quests.',
+                       player.quests, 50, screen_width, screen_height)
 
 
 

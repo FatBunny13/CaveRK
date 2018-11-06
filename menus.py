@@ -49,7 +49,7 @@ def inventory_menu(con, header, player, inventory_width, screen_width, screen_he
     menu(con, header, options, inventory_width, screen_width, screen_height)
 
 def skill_use_menu(con, header, player, inventory_width, screen_width, screen_height):
-    # show a menu with each item of the inventory as an option
+    # show a menu with each quest
     if len(player.skills.number_of_skills) == 0:
         options = ['You have no skills.']
     else:
@@ -57,6 +57,15 @@ def skill_use_menu(con, header, player, inventory_width, screen_width, screen_he
 
 
 
+
+    menu(con, header, options, inventory_width, screen_width, screen_height)
+
+def quest_menu(con, header, player, inventory_width, screen_width, screen_height):
+    # show a menu with each item of the inventory as an option
+    if len(player.quests) == 0:
+        options = ['You have no quests.']
+    else:
+        options = [quest.name for quest in player.quests]
 
     menu(con, header, options, inventory_width, screen_width, screen_height)
 
