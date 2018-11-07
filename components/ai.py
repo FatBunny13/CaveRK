@@ -103,7 +103,7 @@ class SleepMonster:
                 results.extend(attack_results)
                 attacks = randint(1, 10)
         else:
-                if monster.fighter.is_peaceful == False and libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+                if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
 
                     if monster.distance_to(target) >= 2:
                         if target.fighter.stealthed == 0:
