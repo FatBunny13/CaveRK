@@ -5,6 +5,10 @@ import math
 from game_messages import Message
 from item_functions import heal
 
+class Boss:
+    def __init__(self,boss):
+        self.boss = boss
+
 class Jobs:
     def __init__(self, priest_level=0, fighter_level=0, thief_level=0,wizard_level=0,psychic_level=0,enchanter_level=0,diva_level=0,job=0):
         self.priest_level = priest_level
@@ -21,7 +25,7 @@ class Fighter:
     def __init__(self, hp, defense, power, agility,mana,base_psyche,attack_dice_minimum,attack_dice_maximum,ac,will,blessed=0,doomed=1,poison_timer=0,
                 clairvoyance=False,poisoned=0,blessed_timer=0,bless_bonus=0,starvation_bonus = 0,nutrition=0, gender=0,stealthed=0,riposte=0,
                  riposte_time=0,race=0, xp=0,sleep=False,sleep_timer=0,paralysis=False,haste=False,is_peaceful=False,haste_bonus=0,haste_time=0,paralysis_time=0,eat_function = None,
-                 talk_message = '',talk_message_2='',talk_message_3='',talk_message_4=''):
+                 talk_message = '',talk_message_2='',talk_message_3='',talk_message_4='',boss=None):
         self.base_max_hp = hp
         self.hp = hp
         self.base_defense = defense
@@ -62,6 +66,7 @@ class Fighter:
         self.talk_message_2 = talk_message_2
         self.talk_message_3 = talk_message_3
         self.talk_message_4 = talk_message_4
+        self.boss = boss
 
     @property
     def max_mana(self):
@@ -175,6 +180,12 @@ class Fighter:
 
         if self.hp > self.max_hp:
             self.hp = self.max_hp
+
+    def eat(self, amount):
+        self.nutrition += amount
+
+        if self.nutrition > self.nutrition:
+            self.nutrition = self.nutrition
 
     def weapon_damage (self,damage):
         if self.owner and self.owner.equipment:

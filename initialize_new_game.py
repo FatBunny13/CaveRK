@@ -72,7 +72,9 @@ def get_constants():
         'dark_ground': libtcod.Color(50, 50, 150),
         'light_wall': libtcod.Color(101, 101, 101),
         'light_ground': libtcod.Color(148, 158, 148),
-        'red_wall': libtcod.Color(102, 0, 0),
+        'village_wall': libtcod.Color(101, 101, 101),
+        'village_ground': libtcod.Color(44, 140, 55),
+        'red_wall': libtcod.Color(165, 33, 33),
         'red_ground': libtcod.Color(91, 0, 0)
     }
 
@@ -122,7 +124,7 @@ def get_game_variables(constants):
                     has_game_variables=game_variables_component)
     entities = [player]
 
-    equippable_component = Equippable(EquipmentSlots.MAIN_HAND,minimum_hit_dice=1,maximum_hit_dice=4)
+    equippable_component = Equippable(EquipmentSlots.MAIN_HAND,minimum_hit_dice=50,maximum_hit_dice=100)
     item_component = Item(use_function=None)
     dagger = Entity(0, 0, '/', libtcod.sky, 'Carving Knife', equippable=equippable_component,item=item_component)
     equippable_component = Equippable(EquipmentSlots.OFF_HAND, ac_bonus=1, will_bonus= -1)

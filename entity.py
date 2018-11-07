@@ -23,7 +23,7 @@ class Entity:
     """
     def __init__(self, x, y, entity_char, color, name,player=False, blocks=False, render_order=RenderOrder.CORPSE, fighter=None, ai=None,
                  item=None, inventory=None, stairs=None, level=None, equipment=None, equippable=None, upstairs = None,
-                 skill=None, skills=None, job=None,quests=None,has_game_variables=None):
+                 skill=None, skills=None, job=None,quests=None,has_game_variables=None,boss=None):
         self.player = player
         self.x = x
         self.y = y

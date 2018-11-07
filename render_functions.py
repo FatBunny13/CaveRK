@@ -57,8 +57,14 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
                         libtcod.console_set_char_background(con, x, y, colors['red_ground'], libtcod.BKGND_SET)
 
                     game_map.tiles[x][y].explored = True
+                elif visible and game_map.dungeon_level == -1:
+                    if wall:
+                        libtcod.console_set_char_background(con, x, y, colors['village_wall'], libtcod.BKGND_SET)
+                    else:
+                        libtcod.console_set_char_background(con, x, y, colors['village_ground'], libtcod.BKGND_SET)
 
-                if visible:
+                    game_map.tiles[x][y].explored = True
+                elif visible:
                     if wall:
                         libtcod.console_set_char_background(con, x, y, colors['light_wall'], libtcod.BKGND_SET)
                     else:
@@ -96,6 +102,8 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
                libtcod.light_blue, libtcod.darker_blue)
     libtcod.console_print_ex(panel, 1, 3, libtcod.BKGND_NONE, libtcod.LEFT,
                              'Dungeon level: {0}'.format(game_map.dungeon_level))
+    libtcod.console_print_ex(panel, 1, 5, libtcod.BKGND_NONE, libtcod.LEFT,
+                             'Red Cave Level: {0}'.format(game_map.red_cave_level))
     libtcod.console_print_ex(panel, 1, 4, libtcod.BKGND_NONE, libtcod.LEFT,
                              'Nutrition: {0}'.format(player.fighter.nutrition))
     libtcod.console_print_ex(con, 1, 20, libtcod.BKGND_NONE, libtcod.LEFT,
