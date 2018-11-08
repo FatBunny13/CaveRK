@@ -3,6 +3,5 @@ import libtcodpy as libtcod
 from game_messages import Message
 
 class Quest:
-    def __init__(self,has_quest = False, completed=False):
-        self.has_quest = has_quest
+    def __init__(self, completed=False):
         self.completed = completed
