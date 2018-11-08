@@ -136,13 +136,6 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                     if entity.fighter.poison_time == 0:
                         entity.fighter.poison = 0
 
-            for entity in entities:
-                if entity.fighter and entity.ai and entity.fighter.paralysis == 1:
-                    entity.fighter.paralysis_time -= 1
-                    if entity.fighter.paralysis_time == 0:
-                        entity.fighter.paralysis = 0
-                        message_log.add_message(Message('The {0}!'.format(entity.name), libtcod.yellow))
-                    pass
 
 
 
@@ -266,18 +259,8 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
         if take_stairs and game_state == GameStates.PLAYERS_TURN:
             for entity in entities:
-                if entity.upstairs and entity.upstairs.red_cave_stairs == True:
-                    message_log.add_message(Message('You cannot go down these stairs.', libtcod.yellow))
-                    break
-                elif entity.stairs and entity.stairs.dungeon_stairs == True and entity.x == player.x and entity.y == player.y:
+                if entity.stairs and entity.x == player.x and entity.y == player.y:
                     entities = game_map.next_floor(player, message_log, constants)
-                    fov_map = initialize_fov(game_map)
-                    fov_recompute = True
-                    libtcod.console_clear(con)
-
-                    break
-                elif entity.stairs and entity.stairs.red_cave_stairs == True and entity.x == player.x and entity.y == player.y:
-                    entities = game_map.next_red_cave_floor(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
                     libtcod.console_clear(con)
@@ -288,15 +271,8 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
         if take_upstairs and game_state == GameStates.PLAYERS_TURN:
             for entity in entities:
-                if entity.upstairs and entity.upstairs.dungeon_stairs == True and entity.x == player.x and entity.y == player.y:
+                if entity.stairs and entity.x == player.x and entity.y == player.y:
                     entities = game_map.previous_floor(player, message_log, constants)
-                    fov_map = initialize_fov(game_map)
-                    fov_recompute = True
-                    libtcod.console_clear(con)
-
-                    break
-                elif entity.upstairs and entity.upstairs.red_cave_stairs == True and entity.x == player.x and entity.y == player.y:
-                    entities = game_map.previous_red_cave_floor(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
                     libtcod.console_clear(con)
@@ -519,7 +495,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 print(player_has_reached_village)
                 for entity in entities:
                     if leader.x == target_x and leader.y == target_y and player_has_reached_village == False:
-                        leader.fighter.talk_message =('I can\'t believe you made it out! We need your help!')
+                        leader.fighter.talk_message =('I can\'t believe you made it out! We need your help')
                         player_has_reached_village = True
                         player.fighter.xp += 50
                         starting_quest.completed = True
@@ -579,7 +555,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 if dead_entity == player:
                     message, game_state = kill_player(dead_entity)
                 else:
-                    message = kill_monster(dead_entity,player)
+                    message = kill_monster(dead_entity)
 
                 message_log.add_message(message)
 
@@ -682,7 +658,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                             if dead_entity == player:
                                 message, game_state = kill_player(dead_entity)
                             else:
-                                message = kill_monster(dead_entity,player)
+                                message = kill_monster(dead_entity)
 
                             message_log.add_message(message)
 

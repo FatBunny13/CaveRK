@@ -18,8 +18,5 @@ def talk_to_enemy(*args, **kwargs):
     for entity in entities:
         if entity.distance(target_x, target_y) <= maximum_range and entity.fighter:
             results.append({'message': Message(entity.fighter.talk_message, libtcod.yellow)})
-            results.append({'message': Message(entity.fighter.talk_message_2, libtcod.yellow)})
-            results.append({'message': Message(entity.fighter.talk_message_3, libtcod.yellow)})
-            results.append({'message': Message(entity.fighter.talk_message_4, libtcod.yellow)})
 
     return results
