@@ -19,13 +19,16 @@ class PeacefulMonster:
 
 class BasicMonster:
     def take_turn(self, target, fov_map, game_map, entities):
+        global npc_target
+
         results = []
 
         monster = self.owner
         closest_distance = 10
         for entity in entities:
-            npc_target = entity
-        if monster.fighter.is_peaceful == True and npc_target.ai:
+            if entity.ai and entity.fighter.is_peaceful == False and entity != monster:
+                npc_target = entity
+        if monster.fighter.is_peaceful == True and npc_target.ai and npc_target.fighter and npc_target.fighter.is_peaceful == False :
 
             distance = monster.distance_to(npc_target)
 
@@ -69,13 +72,18 @@ class BasicMonster:
 
 class SleepMonster:
     def take_turn(self, target, fov_map, game_map, entities):
+        global npc_target
         global attacks
         results = []
 
         monster = self.owner
         attacks = randint(1,10)
-        if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
-
+        closest_distance = 10
+        for entity in entities:
+            if entity.ai and entity.fighter.is_peaceful == False and entity != monster:
+                npc_target = entity
+        if monster.fighter.is_peaceful == True and npc_target.ai and npc_target.fighter and npc_target.fighter.is_peaceful == False:
+            target = npc_target
             if monster.distance_to(target) >= 2:
                 if target.fighter.stealthed == 0:
                     monster.move_astar(target, entities, game_map)
@@ -95,11 +103,32 @@ class SleepMonster:
                 results.extend(attack_results)
                 attacks = randint(1, 10)
         else:
-            random_x = self.owner.x + randint(0, 2) - 1
-            random_y = self.owner.y + randint(0, 2) - 1
+                if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
 
-            if random_x != self.owner.x and random_y != self.owner.y:
-                self.owner.move_towards(random_x, random_y, game_map, entities)
+                    if monster.distance_to(target) >= 2:
+                        if target.fighter.stealthed == 0:
+                            monster.move_astar(target, entities, game_map)
+                        else:
+                            random_x = self.owner.x + randint(0, 2) - 1
+                            random_y = self.owner.y + randint(0, 2) - 1
+
+                            if random_x != self.owner.x and random_y != self.owner.y:
+                                self.owner.move_towards(random_x, random_y, game_map, entities)
+                                attacks = randint(1, 10)
+                    elif target.fighter.hp > 0 and target.fighter.paralysis == 0 and 8 <= attacks >= 9 <= attacks <= 10:
+                        attack_results = monster.fighter.paralysis_attack(target)
+                        results.extend(attack_results)
+                        attacks = randint(1, 10)
+                    elif target.fighter.hp > 0:
+                        attack_results = monster.fighter.attack(target)
+                        results.extend(attack_results)
+                        attacks = randint(1, 10)
+                else:
+                    random_x = self.owner.x + randint(0, 2) - 1
+                    random_y = self.owner.y + randint(0, 2) - 1
+
+                    if random_x != self.owner.x and random_y != self.owner.y:
+                        self.owner.move_towards(random_x, random_y, game_map, entities)
 
         return results
 
@@ -218,14 +247,19 @@ class SlimeMonster:
         return results
 
 class ShrubMonster:
+    def __init__(self,closest_distance):
+        self.closest_distance = closest_distance
+
     def take_turn(self, target, fov_map, game_map, entities):
         results = []
 
         monster = self.owner
         if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+            distance = monster.distance_to(target)
+            if distance <= self.closest_distance:
 
-            if target.fighter.hp > 0:
-                attack_results = monster.fighter.attack(target)
-                results.extend(attack_results)
+                if target.fighter.hp > 0:
+                    attack_results = monster.fighter.attack(target)
+                    results.extend(attack_results)
 
         return results
