@@ -5,6 +5,8 @@ from game_messages import Message
 from game_states import GameStates
 
 from render_functions import RenderOrder
+from quest_list import trash_king_quest
+
 
 
 def kill_player(player):
@@ -14,9 +16,10 @@ def kill_player(player):
     return Message('You died!', libtcod.red), GameStates.PLAYER_DEAD
 
 
-def kill_monster(monster):
+def kill_monster(monster,player):
     death_message = Message('{0} is dead!'.format(monster.name.capitalize()), libtcod.orange)
-
+    if monster.fighter.boss == 2:
+        player.game_variables.killed_trash_king = True
     monster.char = '%'
     monster.color = libtcod.dark_red
     monster.blocks = False

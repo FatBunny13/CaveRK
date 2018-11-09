@@ -7,7 +7,6 @@ def talk_to_enemy(*args, **kwargs):
     fov_map = kwargs.get('fov_map')
     target_x = kwargs.get('target_x')
     target_y = kwargs.get('target_y')
-    maximum_range = 1
 
     results = []
 
@@ -16,7 +15,10 @@ def talk_to_enemy(*args, **kwargs):
         return results
 
     for entity in entities:
-        if entity.distance(target_x, target_y) <= maximum_range and entity.fighter:
-            results.append({'message': Message(entity.fighter.talk_message, libtcod.yellow)})
+        if entity.x == target_x and entity.y == target_y and entity.fighter:
+            results.append({'message': Message(entity.fighter.talk_message, libtcod.lighter_blue)})
+            results.append({'message': Message(entity.fighter.talk_message_2, libtcod.lighter_blue)})
+            results.append({'message': Message(entity.fighter.talk_message_3, libtcod.lighter_blue)})
+            results.append({'message': Message(entity.fighter.talk_message_4, libtcod.lighter_blue)})
 
     return results

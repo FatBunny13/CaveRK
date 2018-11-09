@@ -19,7 +19,7 @@ from entity import Entity
 from components.ai import PeacefulMonster,BasicMonster
 from talk_functions import talk_to_enemy
 from npc_list import leader
-from quest_list import starting_quest
+from quest_list import starting_quest, trash_king_quest
 
 def play_game(player, entities, game_map, message_log,game_state, con, panel, constants):
     fov_recompute = True
@@ -136,6 +136,13 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                     if entity.fighter.poison_time == 0:
                         entity.fighter.poison = 0
 
+            for entity in entities:
+                if entity.fighter and entity.ai and entity.fighter.paralysis == 1:
+                    entity.fighter.paralysis_time -= 1
+                    if entity.fighter.paralysis_time == 0:
+                        entity.fighter.paralysis = 0
+                        message_log.add_message(Message('The {0}!'.format(entity.name), libtcod.yellow))
+                    pass
 
 
 
@@ -259,8 +266,19 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
         if take_stairs and game_state == GameStates.PLAYERS_TURN:
             for entity in entities:
-                if entity.stairs and entity.x == player.x and entity.y == player.y:
+                if entity.upstairs and entity.upstairs.red_cave_stairs == True:
+                    message_log.add_message(Message('You cannot go down these stairs.', libtcod.yellow))
+                    break
+                elif entity.stairs and entity.stairs.dungeon_stairs == True and entity.x == player.x and entity.y == player.y:
                     entities = game_map.next_floor(player, message_log, constants)
+                    fov_map = initialize_fov(game_map)
+                    fov_recompute = True
+                    libtcod.console_clear(con)
+
+                    break
+
+                elif entity.stairs and entity.stairs.red_cave_stairs == True and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.next_red_cave_floor(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
                     libtcod.console_clear(con)
@@ -271,8 +289,23 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
         if take_upstairs and game_state == GameStates.PLAYERS_TURN:
             for entity in entities:
-                if entity.stairs and entity.x == player.x and entity.y == player.y:
+
+                if entity.upstairs and entity.upstairs.dungeon_stairs == True and entity.upstairs and entity.upstairs.red_cave_stairs == True and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.leave_red_cave(player, message_log, constants)
+                    fov_map = initialize_fov(game_map)
+                    fov_recompute = True
+                    libtcod.console_clear(con)
+
+                    break
+                elif entity.upstairs and entity.upstairs.dungeon_stairs == True and entity.x == player.x and entity.y == player.y:
                     entities = game_map.previous_floor(player, message_log, constants)
+                    fov_map = initialize_fov(game_map)
+                    fov_recompute = True
+                    libtcod.console_clear(con)
+
+                    break
+                elif entity.upstairs and entity.upstairs.red_cave_stairs == True and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.previous_red_cave_floor(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
                     libtcod.console_clear(con)
@@ -487,20 +520,45 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
         if game_state == GameStates.TALK_TARGETING:
             if left_click:
                 target_x, target_y = left_click
+                for entity in entities:
+                    if entity == leader and leader.x == target_x and leader.y == target_y and player_has_reached_village == False:
+                        leader.fighter.talk_message =('Oh my god-fae you\'re alive! We need your help! While you were gone we have been under attack by Trashling Rebels')
+                        leader.fighter.talk_message_2 = ('They have been trying to send a message to the other races')
+                        leader.fighter.talk_message_3 = ('By trying to raid our villages. ')
+                        leader.fighter.talk_message_4 = ('We need your help. Please slay their leader. The cruel Trash-King!')
+                        player_has_reached_village = True
+                        player.fighter.xp += 50
+                        starting_quest.completed = True
+                        trash_king_quest.quest.has_quest = True
+                        player.quests.add_quest(trash_king_quest)
+                        for quest in player.quests.quests:
+                            player.quests.remove_quest(starting_quest)
+                    elif entity == leader and leader.x == target_x and leader.y == target_y and player_has_reached_village == True and player.game_variables.killed_trash_king == True and trash_king_quest.quest.completed ==False:
+                        message_log.add_message(Message('Hooray the Trash-King is dead!', libtcod.lighter_blue))
+                        message_log.add_message(Message('Now we can mine Red Clay now!', libtcod.lighter_blue))
+                        message_log.add_message(Message('Well you\'re certainly strong! Some of the villagers need help!', libtcod.lighter_blue))
+                        message_log.add_message(Message('We need a hero like you. Talk to me when you get stronger', libtcod.lighter_blue))
+                        leader.fighter.talk_message = (
+                            'Have you finished all of the villagers demands?')
+                        leader.fighter.talk_message_2 = 'If you have. Maybe go exploring! Who knows what you may find!'
+                        leader.fighter.talk_message_3 = 'I know that one of the sprites wants to get her friend some sweets! Maybe ask her?'
+                        leader.fighter.talk_message_4 = 'I know that dapper looking Trashling also needs some help too!'
+                        player.fighter.xp += 500
+                        trash_king_quest.quest.completed = True
+                        player.quests.remove_quest(trash_king_quest)
+                    elif entity == leader and leader.x == target_x and leader.y == target_y and player_has_reached_village == True and trash_king_quest.quest.has_quest == True and player.game_variables.killed_trash_king == False:
+                        leader.fighter.talk_message = (
+                            'I fear for the village! Please defeat the rebels!')
+                        leader.fighter.talk_message_2 = 'I wish for the little sprite darlings I tutor to be safe!'
+                        leader.fighter.talk_message_3 = 'I love them so much! But my goodness! One is so rambunctious she nearly snow on fire!'
+                        leader.fighter.talk_message_4 = 'It\'s literally impossible yet she did it anyways!'
+                    elif entity == leader and leader.x == target_x and leader.y == target_y and trash_king_quest.quest.completed == True:
+                        pass
 
                 talk_results = talk_to_enemy(player=player,entities=entities, fov_map=fov_map,
                                                         target_x=target_x, target_y=target_y)
                 player_turn_results.extend(talk_results)
                 libtcod.console_flush()
-                print(player_has_reached_village)
-                for entity in entities:
-                    if leader.x == target_x and leader.y == target_y and player_has_reached_village == False:
-                        leader.fighter.talk_message =('I can\'t believe you made it out! We need your help')
-                        player_has_reached_village = True
-                        player.fighter.xp += 50
-                        starting_quest.completed = True
-                        for quest in player.quests.quests:
-                            player.quests.remove_quest(starting_quest)
 
             elif right_click:
                 player_turn_results.append({'targeting_cancelled': True})
@@ -555,7 +613,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 if dead_entity == player:
                     message, game_state = kill_player(dead_entity)
                 else:
-                    message = kill_monster(dead_entity)
+                    message = kill_monster(dead_entity,player)
 
                 message_log.add_message(message)
 
@@ -658,7 +716,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                             if dead_entity == player:
                                 message, game_state = kill_player(dead_entity)
                             else:
-                                message = kill_monster(dead_entity)
+                                message = kill_monster(dead_entity,player)
 
                             message_log.add_message(message)
 

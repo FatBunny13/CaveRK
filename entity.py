@@ -23,7 +23,7 @@ class Entity:
     """
     def __init__(self, x, y, entity_char, color, name,player=False, blocks=False, render_order=RenderOrder.CORPSE, fighter=None, ai=None,
                  item=None, inventory=None, stairs=None, level=None, equipment=None, equippable=None, upstairs = None,
-                 skill=None, skills=None, job=None,quests=None):
+                 skill=None, skills=None, job=None,quests=None,has_game_variables=None,boss=None):
         self.player = player
         self.x = x
         self.y = y
@@ -45,6 +45,7 @@ class Entity:
         self.skills = skills
         self.job = job
         self.quests = quests
+        self.game_variables = has_game_variables
 
         if self.fighter:
             self.fighter.owner = self
@@ -86,6 +87,9 @@ class Entity:
 
         if self.job:
             self.job.owner = self
+
+        if self.game_variables:
+            self.game_variables.owner = self
 
     def move(self, dx, dy):
         # Move the entity by a given amount
