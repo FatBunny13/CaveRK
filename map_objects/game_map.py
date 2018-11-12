@@ -1,7 +1,7 @@
-import libtcodpy as libtcod
+import tcod as libtcod
 from random import randint
 
-from components.ai import BasicMonster, SlimeMonster, ShrubMonster,SleepMonster,HasteSelfMonster,PeacefulMonster,PoisonMonster
+from components.ai import BasicMonster, SlimeMonster, ShrubMonster,SleepMonster,HasteSelfMonster,PeacefulMonster,PoisonMonster,HungerMonster
 from components.equipment import EquipmentSlots, Equipment
 from components.equippable import Equippable
 from fighter import Fighter, Boss
@@ -306,6 +306,10 @@ class GameMap:
 
                     # center coordinates of new room, will be useful later
                     (new_x, new_y) = new_room.center()
+
+                    if self.tiles[new_x][new_y].blocked == True:
+                        self.tiles[new_x][new_y].blocked = False
+                        self.tiles[new_x][new_y].block_sight = False
 
                     center_of_last_room_x = new_x
                     center_of_last_room_y = new_y
@@ -773,10 +777,9 @@ class GameMap:
         # Get a random number of items
         number_of_items = randint(0, max_items_per_room)
         monster_chances = {
-                'orc': 20,
+                'stalker': 90,
                 'maiden': from_dungeon_level([[5, 2], [10, 5], [1, 7]], self.moth_cave_level),
-                'mistmaiden': from_dungeon_level([[4, 1], [10, 5], [1, 7]], self.moth_cave_level),
-                'stalker': from_dungeon_level([[6, 2], [30, 5], [60, 7]],self.moth_cave_level)}
+                'mistmaiden': from_dungeon_level([[4, 2], [10, 5], [1, 7]], self.moth_cave_level),}
 
         item_chances = {
             'healing_potion': 35,
@@ -806,12 +809,12 @@ class GameMap:
                         monster = Entity(x, y, 'm', libtcod.desaturated_green, 'Striker-Moth', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,item=food_component)
                 elif monster_choice == 'stalker':
-                        fighter_component = Fighter(hp=20, defense=2, power=4, xp=5000, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=0,stealthed=1)
-                        food_component = Item(use_function=eat, amount=-20,
-                                              eat_message='You eat the Hunger-Moth. You feel the satiation of thousands!')
-                        ai_component = BasicMonster()
+                        fighter_component = Fighter(hp=20, defense=2, power=4, xp=5000, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=0)
+                        food_component = Item(use_function=eat, amount=60,
+                                              eat_message='You eat the Hunger-Moth. Tastes like chicken!!')
+                        ai_component = HungerMonster()
 
-                        monster = Entity(x, y, 'm', libtcod.gray, 'Hunger-Moth', blocks=True,
+                        monster = Entity(x, y, 'm', libtcod.red, 'Hunger-Moth', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,item=food_component)
                 elif monster_choice == 'maiden':
                         fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,

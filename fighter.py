@@ -274,8 +274,15 @@ class Fighter:
             target.fighter.sleep_timer = randint(10,35)
 
     def hunger_attack(self,target):
+        results = []
+
         hunger_damage = randint(5,30)
-        target.fighter.take_hunger_damage(target,hunger_damage)
+        target.fighter.take_hunger_damage(hunger_damage)
+
+        results.append({'message': Message('{0} starves the {1}!'.format(
+            self.owner.name.capitalize(), target.name), libtcod.white)})
+
+        return results
     def paralysis_attack(self,target):
         global paralysis_attack_chance
         global paralysis_defense_chance

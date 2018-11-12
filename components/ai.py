@@ -209,12 +209,9 @@ class PoisonMonster:
                     if random_x != self.owner.x and random_y != self.owner.y:
                         self.owner.move_towards(random_x, random_y, game_map, entities)
                         attacks = randint(1, 10)
-            elif target.fighter.hp > 0 and target.fighter.poisoned == 0 and 8 <= attacks >= 9 <= attacks <= 10:
+            elif target.fighter.hp > 0:
                 target.fighter.poisoned = 1
                 attack_results = monster.fighter.poison_attack(target)
-                results.extend(attack_results)
-                attacks = randint(1, 10)
-            elif target.fighter.hp > 0:
                 attack_results = monster.fighter.attack(target)
                 results.extend(attack_results)
                 attacks = randint(1, 10)
