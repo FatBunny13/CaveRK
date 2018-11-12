@@ -273,6 +273,9 @@ class Fighter:
             target.fighter.sleep = True
             target.fighter.sleep_timer = randint(10,35)
 
+    def hunger_attack(self,target):
+        hunger_damage = randint(5,30)
+        target.fighter.take_hunger_damage(target,hunger_damage)
     def paralysis_attack(self,target):
         global paralysis_attack_chance
         global paralysis_defense_chance
@@ -301,6 +304,14 @@ class Fighter:
         self.haste_time = randint(10,35)
 
         return results
+
+    def poison_attack(self,target):
+
+        results = []
+
+        results.append({'message': Message('{0} poisons the {1}!'.format(
+            self.owner.name.capitalize(), target.name), libtcod.white)})
+
 
 
     def poison(self, target):

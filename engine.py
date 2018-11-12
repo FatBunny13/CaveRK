@@ -166,13 +166,16 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
             if not game_map.is_blocked(destination_x, destination_y):
                 target = get_blocking_entities_at_location(entities, destination_x, destination_y)
-                if target:
+                if target and target.fighter:
                     if target.fighter.is_peaceful is False:
                         attack_results = player.fighter.attack(target)
                         player_turn_results.extend(attack_results)
                         game_state = GameStates.ENEMY_TURN
                     elif target.fighter.is_peaceful is True:
                         game_state = GameStates.ATTACK_MENU
+                elif target and target.blocks == True:
+                    message_log.add_message(Message('You cannot walk through the {0}!'.format(target.name)))
+                    pass
                 else:
                     player.move(dx, dy)
 
@@ -266,8 +269,20 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
         if take_stairs and game_state == GameStates.PLAYERS_TURN:
             for entity in entities:
-                if entity.upstairs and entity.upstairs.red_cave_stairs == True:
+                if entity.upstairs and entity.x == player.x and entity.y == player.y:
                     message_log.add_message(Message('You cannot go down these stairs.', libtcod.yellow))
+                    break
+                elif entity.stairs and entity.stairs.moth_stairs == True and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.next_moth_cave_floor(player, message_log, constants)
+                    fov_map = initialize_fov(game_map)
+                    fov_recompute = True
+                    libtcod.console_clear(con)
+                elif entity.stairs and entity.stairs.wyld_stairs == True and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.go_to_wyld(player, message_log, constants)
+                    fov_map = initialize_fov(game_map)
+                    fov_recompute = True
+                    libtcod.console_clear(con)
+
                     break
                 elif entity.stairs and entity.stairs.dungeon_stairs == True and entity.x == player.x and entity.y == player.y:
                     entities = game_map.next_floor(player, message_log, constants)
@@ -297,8 +312,29 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                     libtcod.console_clear(con)
 
                     break
+                elif entity.upstairs and entity.upstairs.wyld_stairs == True and entity.upstairs.moth_stairs == True and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.leave_moth_cave(player, message_log, constants)
+                    fov_map = initialize_fov(game_map)
+                    fov_recompute = True
+                    libtcod.console_clear(con)
+
+                    break
+                elif entity.upstairs and entity.upstairs.wyld_stairs == True and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.leave_wyld(player, message_log, constants)
+                    fov_map = initialize_fov(game_map)
+                    fov_recompute = True
+                    libtcod.console_clear(con)
+
+                    break
                 elif entity.upstairs and entity.upstairs.dungeon_stairs == True and entity.x == player.x and entity.y == player.y:
                     entities = game_map.previous_floor(player, message_log, constants)
+                    fov_map = initialize_fov(game_map)
+                    fov_recompute = True
+                    libtcod.console_clear(con)
+
+                    break
+                elif entity.upstairs and entity.upstairs.moth_stairs == True and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.previous_moth_cave_floor(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
                     libtcod.console_clear(con)

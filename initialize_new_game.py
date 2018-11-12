@@ -74,6 +74,8 @@ def get_constants():
         'light_ground': libtcod.Color(148, 158, 148),
         'village_wall': libtcod.Color(101, 101, 101),
         'village_ground': libtcod.Color(44, 140, 55),
+        'forest_wall': libtcod.Color(1, 50, 32),
+        'forest_ground': libtcod.Color(20, 40, 32),
         'red_wall': libtcod.Color(165, 33, 33),
         'red_ground': libtcod.Color(91, 0, 0)
     }
