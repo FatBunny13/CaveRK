@@ -423,6 +423,97 @@ class GameMap:
             up_stairs = Entity(player.x, player.y, '<', libtcod.white, 'Stairs',
                                render_order=RenderOrder.UPSTAIRS, upstairs=upstairs_component)
             entities.append(up_stairs)
+        elif self.moth_cave_level == 5:
+            moth = open('moth_cave.txt')
+            contents = moth.read()
+            self.village = False
+            rooms = []
+            num_rooms = 0
+
+            center_of_last_room_x = None
+            center_of_last_room_y = None
+
+            for tile_y, line in enumerate(contents.split('\n')):
+                for tile_x, tile_character in enumerate(line):
+                    if tile_character == '.':
+                        self.create_tile(tile_x,tile_y)
+
+            for r in range(max_rooms):
+                # random width and height
+                w = randint(room_min_size, room_max_size)
+                h = randint(room_min_size, room_max_size)
+                # random position without going out of the boundaries of the map
+                x = randint(0, map_width - w - 1)
+                y = randint(0, map_height - h - 1)
+
+                # "Rect" class makes rectangles easier to work with
+                new_room = Hexagon(x, y, w, h)
+
+                # run through the other rooms and see if they intersect with this one
+                for other_room in rooms:
+                    if new_room.intersect(other_room):
+                        break
+                else:
+                    # this means there are no intersections, so this room is valid
+
+                    # "paint" it to the map's tiles
+                    self.create_hexagon(new_room, map_width, map_height)
+
+                    # center coordinates of new room, will be useful later
+                    (new_x, new_y) = new_room.center()
+
+                    if self.tiles[new_x][new_y].blocked == True:
+                        self.tiles[new_x][new_y].blocked = False
+                        self.tiles[new_x][new_y].block_sight = False
+
+                    center_of_last_room_x = new_x
+                    center_of_last_room_y = new_y
+
+                    if num_rooms == 0:
+                        # this is the first room, where the player starts at
+                        player.x = new_x
+                        player.y = new_y
+                        prev_x = 15
+                        prev_y = 10
+                        self.create_h_tunnel(prev_x, new_x, prev_y)
+                        self.create_v_tunnel(prev_y, new_y, new_x)
+                    else:
+                        # all rooms after the first:
+                        # connect it to the previous room with a tunnel
+
+                        # center coordinates of previous room
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+
+                    self.place_moth_cave_entities(new_room, entities)
+
+                    # finally, append the new room to the list
+                    rooms.append(new_room)
+                    num_rooms += 1
+
+            fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
+                                        attack_dice_minimum=1, attack_dice_maximum=4, ac=5, will=3, talk_message='hi')
+            food_component = Item(use_function=eat_cursed, amount= -20,
+                                  eat_message='You feel a darkness brewing inside you.')
+            ai_component = PoisonMonster()
+
+            mother_moth = Entity(15, 10, 'm', libtcod.darker_purple, 'Mother-Moth', blocks=True,
+                             render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,
+                             item=food_component)
+            entities.append(mother_moth)
+            upstairs_component = Upstairs(self.dungeon_level + 1, moth_stairs=True)
+            up_stairs = Entity(player.x, player.y, '<', libtcod.white, 'Stairs',
+                               render_order=RenderOrder.UPSTAIRS, upstairs=upstairs_component)
+            entities.append(up_stairs)
 
         elif self.wyld == True:
             wyld = open('wyld.txt')
@@ -777,9 +868,9 @@ class GameMap:
         # Get a random number of items
         number_of_items = randint(0, max_items_per_room)
         monster_chances = {
-                'stalker': 90,
-                'maiden': from_dungeon_level([[5, 2], [10, 5], [1, 7]], self.moth_cave_level),
-                'mistmaiden': from_dungeon_level([[4, 2], [10, 5], [1, 7]], self.moth_cave_level),}
+                'stalker': from_dungeon_level([[3, 2], [5, 3]], self.moth_cave_level),
+                'maiden': from_dungeon_level([[5, 2], [5, 5]], self.moth_cave_level),
+                'mistmaiden': from_dungeon_level([[4, 2], [6, 5]], self.moth_cave_level),}
 
         item_chances = {
             'healing_potion': 35,
@@ -811,7 +902,7 @@ class GameMap:
                 elif monster_choice == 'stalker':
                         fighter_component = Fighter(hp=20, defense=2, power=4, xp=5000, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=0)
                         food_component = Item(use_function=eat, amount=60,
-                                              eat_message='You eat the Hunger-Moth. Tastes like chicken!!')
+                                              eat_message='You eat the Hunger-Moth. Tastes like chicken!')
                         ai_component = HungerMonster()
 
                         monster = Entity(x, y, 'm', libtcod.red, 'Hunger-Moth', blocks=True,
@@ -1293,7 +1384,7 @@ class GameMap:
 
     def next_moth_cave_floor(self, player, message_log, constants):
         self.wyld = False
-        self.moth_cave_level += 1
+        self.moth_cave_level += 5
         entities = [player]
 
         self.tiles = self.initialize_tiles()

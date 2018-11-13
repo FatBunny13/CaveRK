@@ -77,7 +77,9 @@ def get_constants():
         'forest_wall': libtcod.Color(1, 50, 32),
         'forest_ground': libtcod.Color(20, 40, 32),
         'red_wall': libtcod.Color(165, 33, 33),
-        'red_ground': libtcod.Color(91, 0, 0)
+        'red_ground': libtcod.Color(91, 0, 0),
+        'moth_wall': libtcod.Color(25, 25, 25),
+        'moth_ground': libtcod.Color(10, 10, 10)
     }
 
     constants = {

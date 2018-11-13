@@ -20,6 +20,7 @@ from components.ai import PeacefulMonster,BasicMonster
 from talk_functions import talk_to_enemy
 from npc_list import leader
 from quest_list import starting_quest, trash_king_quest
+from random import randint
 
 def play_game(player, entities, game_map, message_log,game_state, con, panel, constants):
     fov_recompute = True
@@ -116,11 +117,12 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
             for entity in entities:
                 if entity.fighter and entity.fighter.poisoned == 1:
-                    player.fighter.poison(entity)
+                    entity.fighter.take_damage(randint(1,4))
                     if entity.ai and entity.fighter.hp <= 1:
                         kill_monster(entity)
                     if entity.player and entity.fighter.hp <= 1:
                         kill_player(entity)
+                        game_state = GameStates.PLAYER_DEAD
 
             for entity in entities:
                 if entity.fighter and entity.fighter.riposte == 1:
@@ -133,7 +135,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             for entity in entities:
                 if entity.fighter and entity.fighter.poisoned == 1:
                     entity.fighter.poison_timer -= 1
-                    if entity.fighter.poison_time == 0:
+                    if entity.fighter.poison_timer == 0:
                         entity.fighter.poison = 0
 
             for entity in entities:

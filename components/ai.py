@@ -211,9 +211,11 @@ class PoisonMonster:
                         attacks = randint(1, 10)
             elif target.fighter.hp > 0:
                 target.fighter.poisoned = 1
-                attack_results = monster.fighter.poison_attack(target)
+                target.fighter.poison_timer = 12
+                poison_results = monster.fighter.poison_attack(target)
                 attack_results = monster.fighter.attack(target)
                 results.extend(attack_results)
+                results.extend(poison_results)
                 attacks = randint(1, 10)
         else:
                 if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
@@ -230,8 +232,11 @@ class PoisonMonster:
                                 attacks = randint(1, 10)
                     elif target.fighter.hp > 0 and target.fighter.poisoned == 0 and 8 <= attacks >= 9 <= attacks <= 10:
                         target.fighter.poisoned = 1
-                        attack_results = monster.fighter.poison_attack(target)
+                        target.fighter.poison_timer = 12
+                        poison_results = monster.fighter.poison_attack(target)
+                        attack_results = monster.fighter.attack(target)
                         results.extend(attack_results)
+                        results.extend(poison_results)
                         attacks = randint(1, 10)
                     elif target.fighter.hp > 0:
                         attack_results = monster.fighter.attack(target)

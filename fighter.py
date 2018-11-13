@@ -319,7 +319,7 @@ class Fighter:
         results.append({'message': Message('{0} poisons the {1}!'.format(
             self.owner.name.capitalize(), target.name), libtcod.white)})
 
-
+        return results
 
     def poison(self, target):
         global poisondamage
@@ -327,6 +327,6 @@ class Fighter:
         poisondamage = randint(0,4)
 
         results = []
-        results.extend(target.fighter.take_damage(damage))
+        results.extend(target.fighter.take_damage(poisondamage))
         poisondamage = randint(0,4)
         return results
