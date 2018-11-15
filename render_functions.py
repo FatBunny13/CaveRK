@@ -57,6 +57,13 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
                         libtcod.console_set_char_background(con, x, y, colors['red_ground'], libtcod.BKGND_SET)
 
                     game_map.tiles[x][y].explored = True
+                elif visible and game_map.bees_nest_level > 0:
+                    if wall:
+                        libtcod.console_set_char_background(con, x, y, colors['bee_wall'], libtcod.BKGND_SET)
+                    else:
+                        libtcod.console_set_char_background(con, x, y, colors['bee_ground'], libtcod.BKGND_SET)
+
+                    game_map.tiles[x][y].explored = True
                 elif visible and game_map.moth_cave_level > 0:
                     if wall:
                         libtcod.console_set_char_background(con, x, y, colors['moth_wall'], libtcod.BKGND_SET)

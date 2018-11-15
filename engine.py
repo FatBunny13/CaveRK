@@ -42,7 +42,6 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
     key = libtcod.Key()
     mouse = libtcod.Mouse()
 
-
     game_state = GameStates.CHARACTER_CREATION
     previous_game_state = game_state
 
@@ -119,10 +118,8 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 if entity.fighter and entity.fighter.poisoned == 1:
                     entity.fighter.take_damage(randint(1,4))
                     if entity.ai and entity.fighter.hp <= 1:
-                        kill_monster(entity)
-                    if entity.player and entity.fighter.hp <= 1:
-                        kill_player(entity)
-                        game_state = GameStates.PLAYER_DEAD
+                        kill_monster(entity,player,entities)
+                        break
 
             for entity in entities:
                 if entity.fighter and entity.fighter.riposte == 1:
@@ -131,12 +128,14 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                         message_log.add_message(Message(
                             'The {0} suddenly has less grace.'.format(entity.name), libtcod.red))
                         entity.fighter.riposte = 0
+                        break
 
             for entity in entities:
                 if entity.fighter and entity.fighter.poisoned == 1:
                     entity.fighter.poison_timer -= 1
                     if entity.fighter.poison_timer == 0:
-                        entity.fighter.poison = 0
+                        entity.fighter.poisoned = 0
+                        break
 
             for entity in entities:
                 if entity.fighter and entity.ai and entity.fighter.paralysis == 1:
@@ -144,16 +143,8 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                     if entity.fighter.paralysis_time == 0:
                         entity.fighter.paralysis = 0
                         message_log.add_message(Message('The {0}!'.format(entity.name), libtcod.yellow))
+                        break
                     pass
-
-
-
-
-
-            if player.fighter.nutrition <= 0:
-                kill_player(player)
-                game_state = GameStates.PLAYER_DEAD
-                message_log.add_message(Message('You have starved to death.', libtcod.red))
 
             if player.fighter.starvation_bonus >= 20 and player.fighter.psyche <= 5 or player.fighter.psyche == 5:
                 starvation_variable = 0
@@ -279,6 +270,11 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
                     libtcod.console_clear(con)
+                elif entity.stairs and entity.stairs.bees_stairs == True and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.next_bee_nest_floor(player, message_log, constants)
+                    fov_map = initialize_fov(game_map)
+                    fov_recompute = True
+                    libtcod.console_clear(con)
                 elif entity.stairs and entity.stairs.wyld_stairs == True and entity.x == player.x and entity.y == player.y:
                     entities = game_map.go_to_wyld(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
@@ -316,6 +312,13 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                     break
                 elif entity.upstairs and entity.upstairs.wyld_stairs == True and entity.upstairs.moth_stairs == True and entity.x == player.x and entity.y == player.y:
                     entities = game_map.leave_moth_cave(player, message_log, constants)
+                    fov_map = initialize_fov(game_map)
+                    fov_recompute = True
+                    libtcod.console_clear(con)
+
+                    break
+                elif entity.upstairs and entity.upstairs.wyld_stairs == True and entity.upstairs.bees_stairs == True and entity.x == player.x and entity.y == player.y:
+                    entities = game_map.leave_bees_nest(player, message_log, constants)
                     fov_map = initialize_fov(game_map)
                     fov_recompute = True
                     libtcod.console_clear(con)
@@ -651,7 +654,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 if dead_entity == player:
                     message, game_state = kill_player(dead_entity)
                 else:
-                    message = kill_monster(dead_entity,player)
+                    message = kill_monster(dead_entity,player,entities)
 
                 message_log.add_message(message)
 
@@ -722,6 +725,11 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
         if game_state == GameStates.ENEMY_TURN:
 
+            if player.fighter.hp <= 0 and player.fighter.poisoned == 1:
+                kill_player(player)
+                game_state = GameStates.PLAYER_DEAD
+                message_log.add_message(Message('You have died of poison.', libtcod.red))
+
             if player.fighter.nutrition <= 0:
                 kill_player(player)
                 game_state = GameStates.PLAYER_DEAD
@@ -754,7 +762,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                             if dead_entity == player:
                                 message, game_state = kill_player(dead_entity)
                             else:
-                                message = kill_monster(dead_entity,player)
+                                message = kill_monster(dead_entity,player,entities)
 
                             message_log.add_message(message)
 

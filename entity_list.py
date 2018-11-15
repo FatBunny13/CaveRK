@@ -1,6 +1,7 @@
 import tcod as libtcod
 from entity import Entity
 from random import randint
+buzzing_tile = Entity(3,4,'^',libtcod.yellow,'Buzzing Moss')
 
 tree = Entity(randint(4,6),4,'T',libtcod.forest_green,'Everwet Tree',blocks=True)
 tree2 = Entity(randint(7,8),4,'T',libtcod.forest_green,'Everwet Tree',blocks=True)

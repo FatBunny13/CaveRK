@@ -12,14 +12,21 @@ from quest_list import trash_king_quest
 def kill_player(player):
     player.char = '%'
     player.color = libtcod.dark_red
+    game_state = GameStates.PLAYER_DEAD
 
-    return Message('You died!', libtcod.red), GameStates.PLAYER_DEAD
+    return Message('You died!', libtcod.red),game_state
 
 
-def kill_monster(monster,player):
+def kill_monster(monster,player,entities):
     death_message = Message('{0} is dead!'.format(monster.name.capitalize()), libtcod.orange)
     if monster.fighter.boss == 2:
         player.game_variables.killed_trash_king = True
+    if monster.inventory:
+        for item in monster.inventory.items:
+                monster.inventory.remove_item(item)
+                entities.append(item)
+                item.x = monster.x
+                item.y = monster.y
     monster.char = '%'
     monster.color = libtcod.dark_red
     monster.blocks = False

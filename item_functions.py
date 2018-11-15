@@ -6,12 +6,15 @@ from components.ai import ConfusedMonster,CharmedMonster
 
 from game_messages import Message
 from random import randint
+from entity_list import buzzing_tile
+from entity import Entity
+from components.stairs import Stairs
+from render_functions import RenderOrder
 
 def eat(*args, **kwargs):
     entity = args[0]
     amount = kwargs.get('amount')
     eat_message = kwargs.get('eat_message')
-
     results = []
 
     if entity.fighter.nutrition > 999:
@@ -39,6 +42,41 @@ def eat_cursed(*args, **kwargs):
         results.append({'consumed': True, 'message': Message(eat_message, libtcod.green)})
 
     return results
+
+def special_powder(*args,**kwargs):
+    entity = args[0]
+
+    entities = kwargs.get('entities')
+    game_map = kwargs.get('game_map')
+    constants = kwargs.get('constants')
+    message_log = kwargs.get('message_log')
+
+
+    results = []
+
+    for tile in entities:
+        if buzzing_tile.x == entity.x and buzzing_tile.y == entity.y:
+            results.append({'consumed': False, 'message': Message('Suddenly the buzzing hole opens! You see some solid beeswax stairs leading down.', libtcod.red)})
+            entity.game_variables.bees_nest_spawned = True
+            bees_component = Stairs(game_map.dungeon_level - 1, bees_stairs=True)
+            bees_stairs = Entity(3, 4, '>', libtcod.yellow, 'Stairs to the Bees-Nest',
+                                 render_order=RenderOrder.STAIRS, stairs=bees_component)
+            entities.append(bees_stairs)
+            entities.remove(buzzing_tile)
+            break
+        elif buzzing_tile.x != entity.x and buzzing_tile.y != entity.y:
+            print(entity.x)
+            print(entity.y)
+            print(tile.x)
+            print(tile.y)
+            results.append({'consumed': False,
+                            'message': Message('You sprinkle the powder. It smells sweet.',
+                                               libtcod.pink)})
+            break
+
+    return results
+
+
 
 def heal(*args, **kwargs):
     entity = args[0]
