@@ -1,7 +1,7 @@
 import tcod as libtcod
 from random import randint
 
-from components.ai import BasicMonster, SlimeMonster, ShrubMonster,SleepMonster,HasteSelfMonster,PeacefulMonster,PoisonMonster,HungerMonster
+from components.ai import BasicMonster, SlimeMonster, ShrubMonster,SleepMonster,HasteSelfMonster,PeacefulMonster,PoisonMonster,HungerMonster,BeeSpawnerMonster
 from components.equipment import EquipmentSlots, Equipment
 from components.equippable import Equippable
 from components.inventory import Inventory
@@ -14,7 +14,7 @@ from entity import Entity
 from quest_list import starting_quest
 from game_messages import Message
 
-from item_functions import cast_confuse, cast_fireball, cast_lightning, heal, throw_shurikin,eat,eat_cursed,special_powder
+from item_functions import cast_confuse, cast_fireball, cast_lightning, heal, throw_shurikin,special_powder
 
 from map_objects.rectangle import Rect, Hexagon
 from map_objects.tile import Tile
@@ -25,6 +25,7 @@ from npc_list import leader,bandit,sprite_child_1,sprite_child_2,dapper_trashlin
 from render_functions import RenderOrder
 from static_npc_and_location_spawns import *
 from entity_list import *
+from eat_functions import eat,eat_cursed
 
 
 class GameMap:
@@ -180,6 +181,8 @@ class GameMap:
                             # first move vertically, then horizontally
                             self.create_v_tunnel(prev_y, new_y, prev_x)
                             self.create_h_tunnel(prev_x, new_x, new_y)
+
+                    self.place_bee_nest_entities(new_room, entities)
 
                     # finally, append the new room to the list
                     rooms.append(new_room)
@@ -1080,6 +1083,132 @@ class GameMap:
 
                 entities.append(item)
 
+    def place_bee_nest_entities(self, room, entities):
+        max_monsters_per_room = from_dungeon_level([ [1, 0],[2, 1], [3, 4], [5, 6]], self.bees_nest_level)
+        max_items_per_room = from_dungeon_level([[0, 0], [3, 1]], self.bees_nest_level)
+        min_items_per_room = from_dungeon_level([[1, 0]], self.bees_nest_level)
+
+        # Get a random number of monsters
+        number_of_monsters = randint(1, max_monsters_per_room)
+
+        # Get a random number of items
+        number_of_items = randint(0, max_items_per_room)
+        monster_chances = {
+                'orc': from_dungeon_level([[60, 1]], self.bees_nest_level),
+                'stalker': from_dungeon_level([[5, 2]], self.bees_nest_level),
+                'maiden': from_dungeon_level([[5, 2]], self.bees_nest_level),
+                'mistmaiden': from_dungeon_level([[6, 2]], self.bees_nest_level)}
+
+        item_chances = {
+            'healing_potion': 35,
+            'sword': from_dungeon_level([[10, 1]], self.bees_nest_level),
+            'shield': from_dungeon_level([[15, 8]], self.bees_nest_level),
+            'lance': from_dungeon_level([[15, 3]], self.bees_nest_level),
+            'rbrace': from_dungeon_level([[15, 3]], self.bees_nest_level),
+            'lightning_scroll': from_dungeon_level([[25, 4]], self.bees_nest_level),
+            'fireball_scroll': from_dungeon_level([[25, 6]], self.bees_nest_level),
+            'confusion_scroll': from_dungeon_level([[10, 2]], self.bees_nest_level)
+        }
+
+        for i in range(number_of_monsters):
+            # Choose a random location in the room
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+
+            # Check if an entity is already in that location
+            if not any([entity for entity in entities if entity.x == x and entity.y == y]) and self.tiles[x][y].blocked is False:
+                monster_choice = random_choice_from_dict(monster_chances)
+
+                if monster_choice == 'orc':
+                        fighter_component = Fighter(hp=10, defense=2, power=4, xp=100, agility=4,mana = 0,base_psyche = 0,attack_dice_minimum=2,attack_dice_maximum=6,ac=2,will=5,talk_message = 'The Striker-Moth screeches horribly!')
+                        ai_component = BeeSpawnerMonster()
+                        food_component = Item(use_function=eat,amount=15,eat_message='You eat the Bee-Princess! Bleh! It\'s slimy!')
+
+                        monster = Entity(x, y, 'b', libtcod.light_pink, 'Bee-Princess', blocks=True,
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,item=food_component)
+                elif monster_choice == 'stalker':
+                        fighter_component = Fighter(hp=20, defense=2, power=4, xp=5000, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=0)
+                        food_component = Item(use_function=eat, amount=60,
+                                              eat_message='You eat the Hunger-Moth. Tastes like chicken!')
+                        ai_component = HungerMonster()
+
+                        monster = Entity(x, y, 'm', libtcod.red, 'Hunger-Moth', blocks=True,
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,item=food_component)
+                elif monster_choice == 'maiden':
+                        fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
+                                                attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=3)
+                        food_component = Item(use_function=eat, amount=-50,
+                        eat_message='You eat the Vomit-Moth. You vomit! What did you think was going to happen you moron!')
+                        ai_component = PoisonMonster()
+
+                        monster = Entity(x, y, 'm', libtcod.lighter_yellow, 'Vomit-Moth', blocks=True,
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,item=food_component)
+                elif monster_choice == 'mistmaiden':
+                        fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
+                                                attack_dice_minimum=1, attack_dice_maximum=4, ac=5, will=3,talk_message = 'hi')
+                        food_component = Item(use_function=eat, amount= 60,
+                                              eat_message='You eat the Speedy-Spider! Mmmm! Nice and tangy!')
+                        ai_component = HasteSelfMonster()
+
+                        monster = Entity(x, y, 's', libtcod.darker_blue, 'Speedy-Spider', blocks=True,
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,item=food_component)
+
+                entities.append(monster)
+
+        for i in range(number_of_items):
+            x = randint(room.x1, room.x2)
+            y = randint(room.y1, room.y2)
+
+            if not any([entity for entity in entities if entity.x == x and entity.y == y]) and self.tiles[x][y].blocked is False:
+                item_choice = random_choice_from_dict(item_chances)
+
+                if item_choice == 'healing_potion':
+                    item_component = Item(use_function=heal, amount=40)
+                    item = Entity(x, y, '!', libtcod.violet, 'Healing Potion', render_order=RenderOrder.ITEM,
+                                  item=item_component)
+                elif item_choice == 'sword':
+                    item_component = Item(use_function=None)
+                    equippable_component = Equippable(EquipmentSlots.MAIN_HAND and EquipmentSlots.OFF_HAND, power_bonus=3)
+                    item = Entity(x, y, '/', libtcod.white, 'Sword', equippable=equippable_component,item=item_component)
+                elif item_choice == 'lance':
+                    equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=6, defense_bonus=-5)
+                    item_component = Item(use_function=None)
+                    item = Entity(x, y, '/', libtcod.white, 'Lance', equippable=equippable_component,item=item_component)
+                elif item_choice == 'shield':
+                    item_component = Item(use_function=None)
+                    equippable_component = Equippable(EquipmentSlots.OFF_HAND, defense_bonus=4, agility_bonus =-3)
+                    item = Entity(x, y, '[', libtcod.darker_orange, 'Shield', equippable=equippable_component,item=item_component)
+                elif item_choice == 'rbrace':
+                    item_component = Item(use_function=None)
+                    equippable_component = Equippable(EquipmentSlots.RIGHT_BRACELET, defense_bonus=4, agility_bonus =-3)
+                    item = Entity(x, y, '[', libtcod.black, 'Right Bracelet of Defense', equippable=equippable_component,item=item_component)
+                elif item_choice == 'rlightbrace':
+                    item_component = Item(use_function=None)
+                    equippable_component = Equippable(EquipmentSlots.RIGHT_BRACELET, defense_bonus=1, agility_bonus=-1,)
+                    item = Entity(x, y, '[', libtcod.black, 'Rotten Right Bracelet',
+                                  equippable=equippable_component,item=item_component)
+                elif item_choice == 'fireball_scroll':
+                    item_component = Item(use_function=cast_fireball, targeting=True, targeting_message=Message(
+                        'Left-click a target tile for the fireball, or right-click to cancel.', libtcod.light_cyan),
+                                          damage=25, radius=3)
+                    item = Entity(x, y, '?', libtcod.red, 'Fireball Scroll', render_order=RenderOrder.ITEM,
+                                  item=item_component)
+                elif item_choice == 'confusion_scroll':
+                    item_component = Item(use_function=cast_confuse, targeting=True, targeting_message=Message(
+                        'Left-click an enemy to confuse it, or right-click to cancel.', libtcod.light_cyan))
+                    item = Entity(x, y, '?', libtcod.light_pink, 'Confusion Scroll', render_order=RenderOrder.ITEM,
+                                  item=item_component)
+                elif item_choice == 'lightning_scroll':
+                    item_component = Item(use_function=cast_lightning, damage=40, maximum_range=5)
+                    item = Entity(x, y, '?', libtcod.yellow, 'Lightning Scroll', render_order=RenderOrder.ITEM,
+                                  item=item_component)
+                else:
+                    item_component = Item(use_function=throw_shurikin, damage=20, maximum_range=10)
+                    item = Entity(x, y, '+', libtcod.gray, 'Shuriken', render_order=RenderOrder.ITEM,
+                                  item=item_component)
+
+                entities.append(item)
+
     def place_entities(self, room, entities):
         max_monsters_per_room = from_dungeon_level([ [1, 0],[2, 1], [3, 4], [5, 6]], self.dungeon_level)
         max_items_per_room = from_dungeon_level([[0, 0], [3, 1]], self.dungeon_level)
@@ -1298,7 +1427,7 @@ class GameMap:
                 if monster_choice == 'trash':
                         fighter_component = Fighter(hp=20, defense=2, power=5, xp=100, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=2,attack_dice_maximum=6,ac=3,will=3,talk_message = 'The Trash Bandit screeches')
                         ai_component = BasicMonster()
-                        food_component = Item(use_function=eat_cursed, amount=25,
+                        food_component = Item(use_function=eat, amount=25,
                                               eat_message='That meal tastes like trash!.')
 
                         monster = Entity(x, y, 't', libtcod.desaturated_green, 'Trash Bandit', blocks=True,

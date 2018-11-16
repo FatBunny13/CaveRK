@@ -3,7 +3,6 @@ from random import randint
 import math
 
 from game_messages import Message
-from item_functions import heal
 
 class Boss:
     def __init__(self,boss):
