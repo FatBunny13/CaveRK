@@ -65,10 +65,6 @@ def special_powder(*args,**kwargs):
             entities.remove(buzzing_tile)
             break
         elif buzzing_tile.x != entity.x and buzzing_tile.y != entity.y:
-            print(entity.x)
-            print(entity.y)
-            print(tile.x)
-            print(tile.y)
             results.append({'consumed': False,
                             'message': Message('You sprinkle the powder. It smells sweet.',
                                                libtcod.pink)})

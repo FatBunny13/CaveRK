@@ -21,6 +21,7 @@ from talk_functions import talk_to_enemy
 from npc_list import leader
 from quest_list import starting_quest, trash_king_quest
 from random import randint
+from menus import show_message_screen
 
 def play_game(player, entities, game_map, message_log,game_state, con, panel, constants):
     fov_recompute = True
@@ -107,6 +108,19 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             dx, dy = move
             destination_x = player.x + dx
             destination_y = player.y + dy
+
+            for entity in entities:
+                if entity.has_message and destination_x == entity.x and destination_y == entity.y:
+                    message_log.add_message(Message(
+                        entity.text_message_1, libtcod.yellow))
+                    message_log.add_message(Message(
+                        entity.text_message_2, libtcod.yellow))
+                    message_log.add_message(Message(
+                        entity.text_message_3, libtcod.yellow))
+                    message_log.add_message(Message(
+                        entity.text_message_4, libtcod.yellow))
+                else:
+                   pass
 
             for entity in entities:
                 if entity.ai and entity.fighter.stealthed is 1 and player.fighter.clairvoyance is False:
@@ -213,7 +227,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
         elif pickup and game_state == GameStates.PLAYERS_TURN:
             for entity in entities:
-                if (entity.item or entity.equippable) and entity.x == player.x and entity.y == player.y:
+                if entity.item and entity.x == player.x and entity.y == player.y:
                     pickup_results = player.inventory.add_item(entity)
                     player_turn_results.extend(pickup_results)
 
@@ -659,9 +673,12 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 message_log.add_message(message)
 
             if item_added:
-                entities.remove(item_added)
+                if item_added and item_added.upstairs:
+                    break
+                else:
+                    entities.remove(item_added)
 
-                game_state = GameStates.ENEMY_TURN
+                    game_state = GameStates.ENEMY_TURN
 
             if item_consumed:
                 game_state = GameStates.ENEMY_TURN

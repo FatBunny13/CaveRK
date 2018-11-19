@@ -16,6 +16,12 @@ class Inventory:
                 'item_added': None,
                 'message': Message('You cannot carry any more, your inventory is full', libtcod.yellow)
             })
+        elif item and item.upstairs:
+            results.append({
+                'item_added': item,
+                'message': Message('You cannot pick that up.'.format(item.name), libtcod.blue)
+            })
+
         else:
             results.append({
                 'item_added': item,
@@ -59,23 +65,15 @@ class Inventory:
     def drop_item(self, item):
         results = []
 
-        if self.owner.equipment and self.owner.equipment.main_hand == item or self.owner.equipment and self.owner.equipment.off_hand or self.owner.equipment and self.owner.equipment.right_bracelet or self.owner.equipment and self.equipment.left_bracelet == item:
+        if self.owner.equipment.main_hand == item or self.owner.equipment.off_hand == item or self.owner.equipment.right_bracelet == item or self.owner.equipment.left_bracelet == item:
             self.owner.equipment.toggle_equip(item)
-            item.x = self.owner.x
-            item.y = self.owner.y
 
-            self.remove_item(item)
-            results.append({'item_dropped': item, 'message': Message('You dropped the {0}'.format(item.name),
-                                                                     libtcod.yellow)})
 
-            return results
-        else:
+        item.x = self.owner.x
+        item.y = self.owner.y
 
-            item.x = self.owner.x
-            item.y = self.owner.y
-
-            self.remove_item(item)
-            results.append({'item_dropped': item, 'message': Message('You dropped the {0}'.format(item.name),
+        self.remove_item(item)
+        results.append({'item_dropped': item, 'message': Message('You dropped the {0}'.format(item.name),
                                                                  libtcod.yellow)})
 
-            return results
+        return results

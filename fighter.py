@@ -264,6 +264,72 @@ class Fighter:
 
         return results
 
+    def magic_attack(self, target):
+        results = []
+        global damage
+        global riposte_chance
+        min = 1
+        max = 20
+
+        hit_chance = randint(min,max)
+        defence_chance = randint(min, max)
+        riposte_chance = randint(1,10)
+
+        damage = randint(self.attack_dice_minimum,self.attack_dice_maximum) + self.bless_bonus / self.doomed
+
+        if self.owner.equipment and self.owner.equipment.main_hand and self.owner.equipment.main_hand.equippable:
+            damage = (randint(self.owner.equipment.main_hand.equippable.minimum_hit_dice,self.owner.equipment.main_hand.equippable.maximum_hit_dice) // self.doomed) + self.bless_bonus
+        else:
+            damage = randint(self.attack_dice_minimum, self.attack_dice_maximum) + (
+                        self.power // 5) + self.bless_bonus / self.doomed
+        if hit_chance + self.will + self.bless_bonus > defence_chance + target.fighter.ac + target.fighter.bless_bonus:
+            results = []
+
+            if damage > 0:
+                results.append({'message': Message('{0} attacks {1} for {2} hit points.'.format(
+                    self.owner.name.capitalize(), target.name, str(damage)), libtcod.white)})
+                results.extend(target.fighter.take_damage(damage))
+                damage = randint(self.attack_dice_minimum, self.attack_dice_maximum) + self.bless_bonus / self.doomed
+
+
+
+            else:
+                results.append({'message': Message('{0} shoots a beam of energy at {1} but does no damage.'.format(
+                    self.owner.name.capitalize(), target.name), libtcod.white)})
+                damage = randint(self.attack_dice_minimum, self.attack_dice_maximum)
+
+        elif hit_chance == 20:
+            results = []
+
+            if damage > 0:
+                results.append({'message': Message('{0} shoots a beam of energy at {1} for {2} hit points.'.format(
+                    self.owner.name.capitalize(), target.name, str(damage)), libtcod.white)})
+                results.extend(target.fighter.take_damage(damage))
+                damage = randint(self.attack_dice_minimum, self.attack_dice_maximum)
+            elif damage > 2:
+                results.append({'message': Message('{0} shoots a beam of energy at {1} for {2} hit points. Its a critical strike!'.format(
+                    self.owner.name.capitalize(), target.name, str(damage)), libtcod.white)})
+                results.extend(target.fighter.take_damage(damage))
+                damage = randint(self.attack_dice_minimum, self.attack_dice_maximum)
+            else:
+                results.append({'message': Message('{0} shoots a beam of energy at {1} but does no damage.'.format(
+                    self.owner.name.capitalize(), target.name), libtcod.white)})
+                damage = randint(self.attack_dice_minimum, self.attack_dice_maximum)
+
+        elif defence_chance == 20:
+            results.append({'message': Message('{0} shoots a beam of energy at {1} but misses.'.format(
+                self.owner.name.capitalize(), target.name), libtcod.white)})
+            damage = randint(self.attack_dice_minimum, self.attack_dice_maximum)
+
+
+        else:
+            results.append({'message': Message('{0} shoots a beam of energy at {1} but misses.'.format(
+                self.owner.name.capitalize(), target.name), libtcod.white)})
+            damage = randint(self.attack_dice_minimum, self.attack_dice_maximum)
+
+
+        return results
+
     def sleep_attack(self,target):
         sleep_attack_chance = randint(1,10)
         sleep_defense_chance = randint(1,10)

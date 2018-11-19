@@ -1,7 +1,7 @@
 import tcod as libtcod
 from random import randint
 
-from components.ai import BasicMonster, SlimeMonster, ShrubMonster,SleepMonster,HasteSelfMonster,PeacefulMonster,PoisonMonster,HungerMonster,BeeSpawnerMonster
+from components.ai import BasicMonster, SlimeMonster, ShrubMonster,SleepMonster,HasteSelfMonster,PeacefulMonster,PoisonMonster,HungerMonster,BeeSpawnerMonster,MagicAttackMonster
 from components.equipment import EquipmentSlots, Equipment
 from components.equippable import Equippable
 from components.inventory import Inventory
@@ -25,7 +25,7 @@ from npc_list import leader,bandit,sprite_child_1,sprite_child_2,dapper_trashlin
 from render_functions import RenderOrder
 from static_npc_and_location_spawns import *
 from entity_list import *
-from eat_functions import eat,eat_cursed
+from eat_functions import eat,eat_cursed,eat_poison
 
 
 class GameMap:
@@ -126,7 +126,7 @@ class GameMap:
             cave_stairs = Entity(player.x, player.y, '<', libtcod.darker_red, 'Cave Stairs',
                                render_order=RenderOrder.UPSTAIRS, upstairs=upstairs_component)
             entities.append(cave_stairs)
-        elif self.bees_nest_level == 1:
+        elif self.bees_nest_level == 3:
             self.village = False
             rooms = []
             num_rooms = 0
@@ -165,6 +165,101 @@ class GameMap:
                         # this is the first room, where the player starts at
                         player.x = new_x
                         player.y = new_y
+                    elif num_rooms == 1:
+                        text_story_1 = Entity(28, 10, '*', libtcod.white, 'Tile with a Drawing', has_message=True,
+                                               text_message_1='You see a drawing on the ground.',
+                                               text_message_2='The drawing is of a sickly bee man in bed and a bee-woman',
+                                               text_message_3='The bee-woman is tending to the bee-man. The bee-man is thankful')
+                        entities.append(text_story_1)
+                        text_story_1.x = new_x
+                        text_story_1.y = new_y
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+                    elif num_rooms == 2:
+                        text_story_1 = Entity(28, 10, '*', libtcod.white, 'Tile with a Drawing', has_message=True,
+                                               text_message_1='You see a drawing on the ground.',
+                                               text_message_2='The drawing is of a sickly bee man in a wheelchair and a bee-woman',
+                                               text_message_3='The bee-woman is sitting outside with the bee-man. They look content')
+                        entities.append(text_story_1)
+                        text_story_1.x = new_x
+                        text_story_1.y = new_y
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+                    elif num_rooms == 3:
+                        text_story_1 = Entity(28, 10, '*', libtcod.white, 'Tile with a Drawing', has_message=True,
+                                               text_message_1='You see a drawing on the ground.',
+                                               text_message_2='The drawing is of a sickly bee man in bed and a bee woman.',
+                                               text_message_3='They are kissing. They look euphoric.')
+                        entities.append(text_story_1)
+                        text_story_1.x = new_x
+                        text_story_1.y = new_y
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+                    elif num_rooms == 4:
+                        text_story_1 = Entity(28, 10, '*', libtcod.white, 'Tile with a Drawing', has_message=True,
+                                               text_message_1='You see a drawing on the ground.',
+                                               text_message_2='The drawing is of a sickly bee man in a wheelchair and a bee woman.',
+                                               text_message_3='The bee-man is teaching the bee-woman magic. The bee-woman is on fire. The bee woman is not happy.')
+                        entities.append(text_story_1)
+                        text_story_1.x = new_x
+                        text_story_1.y = new_y
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+                    elif num_rooms == 5:
+                        text_story_1 = Entity(28, 10, '*', libtcod.white, 'Tile with a Drawing', has_message=True,
+                                               text_message_1='You see a drawing on the ground.',
+                                               text_message_2='The drawing is of a sickly bee man in a wheelchair and a bee woman and some powder.',
+                                               text_message_3='The bee-woman gives some of the powder to the bee-man. He looks healthier and happier.')
+                        entities.append(text_story_1)
+                        text_story_1.x = new_x
+                        text_story_1.y = new_y
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
                     else:
                         # all rooms after the first:
                         # connect it to the previous room with a tunnel
@@ -196,6 +291,181 @@ class GameMap:
             up_stairs = Entity(player.x, player.y, '<', libtcod.yellow, 'Stairs back to the Wyld',
                                render_order=RenderOrder.UPSTAIRS, upstairs=upstairs_component)
             entities.append(up_stairs)
+        elif self.bees_nest_level == 2:
+            self.village = False
+            rooms = []
+            num_rooms = 0
+
+            center_of_last_room_x = None
+            center_of_last_room_y = None
+
+            for r in range(max_rooms):
+                # random width and height
+                w = randint(room_min_size, room_max_size)
+                h = randint(room_min_size, room_max_size)
+                # random position without going out of the boundaries of the map
+                x = randint(0, map_width - w - 1)
+                y = randint(0, map_height - h - 1)
+
+                # "Rect" class makes rectangles easier to work with
+                new_room = Rect(x, y, w, h)
+
+                # run through the other rooms and see if they intersect with this one
+                for other_room in rooms:
+                    if new_room.intersect(other_room):
+                        break
+                else:
+                    # this means there are no intersections, so this room is valid
+
+                    # "paint" it to the map's tiles
+                    self.create_honeycomb(new_room,map_width,map_height)
+
+                    # center coordinates of new room, will be useful later
+                    (new_x, new_y) = new_room.center()
+
+                    center_of_last_room_x = new_x
+                    center_of_last_room_y = new_y
+
+                    if num_rooms == 0:
+                        # this is the first room, where the player starts at
+                        player.x = new_x
+                        player.y = new_y
+                    elif num_rooms == 1:
+                        text_story_1 = Entity(28, 10, '*', libtcod.white, 'Tile with a Drawing', has_message=True,
+                                               text_message_1='You see a drawing on the ground.',
+                                               text_message_2='The drawing is of the Moth-Mother and a bee-woman and some powder',
+                                               text_message_3='The The Moth-Mother is taking some powder away from the bee-woman. She is crying')
+                        entities.append(text_story_1)
+                        text_story_1.x = new_x
+                        text_story_1.y = new_y
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+                    elif num_rooms == 2:
+                        text_story_1 = Entity(28, 10, '*', libtcod.white, 'Tile with a Drawing', has_message=True,
+                                               text_message_1='You see a drawing on the ground.',
+                                               text_message_2='The drawing is of a coffin and a bee-woman',
+                                               text_message_3='The bee-woman is crying.')
+                        entities.append(text_story_1)
+                        text_story_1.x = new_x
+                        text_story_1.y = new_y
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+                    elif num_rooms == 3:
+                        text_story_1 = Entity(28, 10, '*', libtcod.white, 'Tile with a Drawing', has_message=True,
+                                               text_message_1='You see a drawing on the ground.',
+                                               text_message_2='The drawing is of a lich and a bee-woman',
+                                               text_message_3='The bee-woman is bargaining with the lich. The lich is laughing.')
+                        entities.append(text_story_1)
+                        text_story_1.x = new_x
+                        text_story_1.y = new_y
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+                    elif num_rooms == 4:
+                        text_story_1 = Entity(28, 10, '*', libtcod.white, 'Tile with a Drawing', has_message=True,
+                                               text_message_1='You see some writing on the ground.',
+                                               text_message_2='WHAT HAPPENED TO OUR QUEEN!.',)
+                        entities.append(text_story_1)
+                        text_story_1.x = new_x
+                        text_story_1.y = new_y
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+                    else:
+                        # all rooms after the first:
+                        # connect it to the previous room with a tunnel
+
+                        # center coordinates of previous room
+                        (prev_x, prev_y) = rooms[num_rooms - 1].center()
+
+                        # flip a coin (random number that is either 0 or 1)
+                        if randint(0, 1) == 1:
+                            # first move horizontally, then vertically
+                            self.create_h_tunnel(prev_x, new_x, prev_y)
+                            self.create_v_tunnel(prev_y, new_y, new_x)
+                        else:
+                            # first move vertically, then horizontally
+                            self.create_v_tunnel(prev_y, new_y, prev_x)
+                            self.create_h_tunnel(prev_x, new_x, new_y)
+
+                    self.place_bee_nest_entities(new_room, entities)
+
+                    # finally, append the new room to the list
+                    rooms.append(new_room)
+                    num_rooms += 1
+
+            stairs_component = Stairs(self.red_cave_level + 1, bees_stairs=True)
+            down_stairs = Entity(center_of_last_room_y, center_of_last_room_y, '>', libtcod.yellow, 'Stairs',
+                                 render_order=RenderOrder.STAIRS, stairs=stairs_component)
+            entities.append(down_stairs)
+            upstairs_component = Upstairs(self.dungeon_level + 1, bees_stairs=True)
+            up_stairs = Entity(player.x, player.y, '<', libtcod.yellow, 'Stairs',
+                               render_order=RenderOrder.UPSTAIRS, upstairs=upstairs_component)
+            entities.append(up_stairs)
+        elif self.bees_nest_level == 1:
+            map = open('beehive.txt')
+            contents = map.read()
+            player.x = 32
+            player.y = 12
+            bee_boss_1_component = Fighter(hp=80, defense=2, power=4, xp=50, agility=1, mana=0, base_psyche=0,
+                                        attack_dice_minimum=2, attack_dice_maximum=8, ac=0, will=5)
+            food_boss_1_component = Item(use_function=eat_poison, amount=-30,
+                                  eat_message='You eat the Queen-Bee. Agh its poisonous!')
+            bee_boss_1_ai_component = PoisonMonster()
+
+            bee_boss_1 = Entity(32, 3, 'b', libtcod.darker_purple, 'Ghostly Queen-Bee', blocks=True,
+                             render_order=RenderOrder.ACTOR, fighter=bee_boss_1_component, ai=bee_boss_1_ai_component,
+                             item=food_boss_1_component)
+            entities.append(bee_boss_1)
+            bee_boss_2_component = Fighter(hp=30, defense=2, power=4, xp=50, agility=1, mana=0, base_psyche=0,
+                                           attack_dice_minimum=1, attack_dice_maximum=3, ac=0, will=5)
+            food_boss_2_component = Item(use_function=eat_poison, amount=-30,
+                                         eat_message='You eat the Drone-Bee. Agh its poisonous!')
+            bee_boss_2_ai_component = MagicAttackMonster()
+
+            bee_boss_2 = Entity(32, 4, 'b', libtcod.lighter_blue, 'Ghostly Drone-Bee', blocks=True,
+                                render_order=RenderOrder.ACTOR, fighter=bee_boss_2_component,
+                                ai=bee_boss_2_ai_component,
+                                item=food_boss_2_component)
+            entities.append(bee_boss_2)
+            for tile_y, line in enumerate(contents.split('\n')):
+                for tile_x, tile_character in enumerate(line):
+                    if tile_character == '.':
+                        self.create_tile(tile_x, tile_y)
         elif self.red_cave_level == 4:
             self.village = False
             rooms = []
@@ -745,6 +1015,13 @@ class GameMap:
             stairs_component = Stairs(self.dungeon_level - 1, wyld_stairs=True)
             wyld_stairs = Entity(4, 20, '>', libtcod.darkest_green, 'Path to the Wyld',
                                  render_order=RenderOrder.STAIRS, stairs=stairs_component)
+            text_square_1 = Entity(29, 10, '*', libtcod.white, 'Tile with Writing',has_message=True,text_message_1='You see some writing on the ground. It says',text_message_2='Welcome to the Church of Havoc',text_message_3='May the God-Fae protect you from the mists of Chaos')
+            text_square_2 = Entity(28, 10, '*', libtcod.white, 'Tile with Writing', has_message=True,
+                                   text_message_1='You see some writing on the ground. It says',
+                                   text_message_2='Welcome to the Church of Havoc',
+                                   text_message_3='May the God-Fae protect you from the mists of Chaos')
+            entities.append(text_square_1)
+            entities.append(text_square_2)
             entities.append(down_stairs)
             entities.append(red_cave_stairs)
             entities.append(wyld_stairs)
@@ -1084,7 +1361,7 @@ class GameMap:
                 entities.append(item)
 
     def place_bee_nest_entities(self, room, entities):
-        max_monsters_per_room = from_dungeon_level([ [1, 0],[2, 1], [3, 4], [5, 6]], self.bees_nest_level)
+        max_monsters_per_room = from_dungeon_level([ [1, 0],[5, 1], [5, 4], [5, 6]], self.bees_nest_level)
         max_items_per_room = from_dungeon_level([[0, 0], [3, 1]], self.bees_nest_level)
         min_items_per_room = from_dungeon_level([[1, 0]], self.bees_nest_level)
 
@@ -1094,10 +1371,11 @@ class GameMap:
         # Get a random number of items
         number_of_items = randint(0, max_items_per_room)
         monster_chances = {
-                'orc': from_dungeon_level([[60, 1]], self.bees_nest_level),
-                'stalker': from_dungeon_level([[5, 2]], self.bees_nest_level),
-                'maiden': from_dungeon_level([[5, 2]], self.bees_nest_level),
-                'mistmaiden': from_dungeon_level([[6, 2]], self.bees_nest_level)}
+                'orc': from_dungeon_level([[5, 2]], self.bees_nest_level),
+                'mage': from_dungeon_level([[4, 2]], self.bees_nest_level),
+                'stalker': from_dungeon_level([[5, 1]], self.bees_nest_level),
+                'maiden': from_dungeon_level([[5, 1]], self.bees_nest_level),
+                'mistmaiden': from_dungeon_level([[6, 1]], self.bees_nest_level)}
 
         item_chances = {
             'healing_potion': 35,
@@ -1127,31 +1405,42 @@ class GameMap:
                         monster = Entity(x, y, 'b', libtcod.light_pink, 'Bee-Princess', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,item=food_component)
                 elif monster_choice == 'stalker':
-                        fighter_component = Fighter(hp=20, defense=2, power=4, xp=5000, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=0)
-                        food_component = Item(use_function=eat, amount=60,
-                                              eat_message='You eat the Hunger-Moth. Tastes like chicken!')
-                        ai_component = HungerMonster()
+                        fighter_component = Fighter(hp=20, defense=2, power=4, xp=50, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=0)
+                        food_component = Item(use_function=eat_poison, amount=-30,
+                                              eat_message='You eat the Soldier-Bee. Agh its poisonous!')
+                        ai_component = PoisonMonster()
 
-                        monster = Entity(x, y, 'm', libtcod.red, 'Hunger-Moth', blocks=True,
+                        monster = Entity(x, y, 'b', libtcod.lighter_green, 'Soldier-Bee', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,item=food_component)
                 elif monster_choice == 'maiden':
                         fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
                                                 attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=3)
-                        food_component = Item(use_function=eat, amount=-50,
-                        eat_message='You eat the Vomit-Moth. You vomit! What did you think was going to happen you moron!')
-                        ai_component = PoisonMonster()
+                        food_component = Item(use_function=eat, amount=5,
+                        eat_message='You eat the Worker-Bee. It tastes very bland.')
+                        ai_component = BasicMonster()
 
-                        monster = Entity(x, y, 'm', libtcod.lighter_yellow, 'Vomit-Moth', blocks=True,
+                        monster = Entity(x, y, 'b', libtcod.yellow, 'Worker-bee', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,item=food_component)
                 elif monster_choice == 'mistmaiden':
                         fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
-                                                attack_dice_minimum=1, attack_dice_maximum=4, ac=5, will=3,talk_message = 'hi')
+                                                attack_dice_minimum=1, attack_dice_maximum=4, ac=5, will=3,talk_message = 'hi',stealthed=1)
                         food_component = Item(use_function=eat, amount= 60,
-                                              eat_message='You eat the Speedy-Spider! Mmmm! Nice and tangy!')
-                        ai_component = HasteSelfMonster()
+                                              eat_message='You eat the Drone-Bee Rogue! Mmmm! Nice and tangy!')
+                        ai_component = BasicMonster()
 
-                        monster = Entity(x, y, 's', libtcod.darker_blue, 'Speedy-Spider', blocks=True,
+                        monster = Entity(x, y, 'b', libtcod.darker_yellow, 'Drone-Bee Rogue', blocks=True,
                                      render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,item=food_component)
+                elif monster_choice == 'mage':
+                    fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,
+                                                attack_dice_minimum=1, attack_dice_maximum=4, ac=5, will=3,
+                                                talk_message='hi')
+                    food_component = Item(use_function=eat, amount=60,
+                                          eat_message='You eat the Speedy-Spider! Mmmm! Nice and tangy!')
+                    ai_component = MagicAttackMonster()
+
+                    monster = Entity(x, y, 'b', libtcod.darker_blue, 'Drone-Bee Mage', blocks=True,
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,
+                                     item=food_component)
 
                 entities.append(monster)
 

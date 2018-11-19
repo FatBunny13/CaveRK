@@ -47,7 +47,6 @@ def get_constants():
 
     map_width = 78
     map_height = 43
-
     room_max_size = 10
     room_min_size = 6
     max_rooms = 30

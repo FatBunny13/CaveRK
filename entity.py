@@ -23,7 +23,7 @@ class Entity:
     """
     def __init__(self, x, y, entity_char, color, name,player=False, blocks=False, render_order=RenderOrder.CORPSE, fighter=None, ai=None,
                  item=None, inventory=None, stairs=None, level=None, equipment=None, equippable=None, upstairs = None,
-                 skill=None, skills=None, job=None,quests=None,has_game_variables=None,boss=None):
+                 skill=None, skills=None, job=None,quests=None,has_game_variables=None,has_message=False,text_message_1='',text_message_2='',text_message_3='',text_message_4=''):
         self.player = player
         self.x = x
         self.y = y
@@ -46,6 +46,11 @@ class Entity:
         self.job = job
         self.quests = quests
         self.game_variables = has_game_variables
+        self.has_message = has_message
+        self.text_message_1 = text_message_1
+        self.text_message_2 = text_message_2
+        self.text_message_3 = text_message_3
+        self.text_message_4 = text_message_4
 
         if self.fighter:
             self.fighter.owner = self
