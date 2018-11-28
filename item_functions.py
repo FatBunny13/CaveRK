@@ -160,6 +160,43 @@ def cast_doom(*args,**kwargs):
 
     return results
 
+def paralyse(*args,**kwargs):
+    caster = args[0]
+    entities = kwargs.get('entities')
+    fov_map = kwargs.get('fov_map')
+    target_x = kwargs.get('target_x')
+    target_y = kwargs.get('target_y')
+
+    results = []
+
+    target = None
+    mana_cost = kwargs.get('mana_cost')
+
+    if not libtcod.map_is_in_fov(fov_map, target_x, target_y):
+        results.append(
+            {'used': False, 'message': Message('You cannot target a tile outside your field of view.', libtcod.yellow)})
+        return results
+
+    for entity in entities:
+        if entity.x == target_x and entity.y == target_y:
+            caster.fighter.take_mana_damage(mana_cost)
+            entity.fighter.paralysis = 1
+            entity.fighter.paralysis_time = 30
+
+            entity.owner = entity
+
+            results.append({'used': True, 'message': Message(
+                'The {0}\'s muscles suddenly lock up!'.format(entity.name),
+                libtcod.red)})
+
+            break
+    else:
+        results.append(
+            {'used': False, 'message': Message('There is nothing targetable at that location.', libtcod.yellow)})
+
+    return results
+
+
 def hide(*args,**kwargs):
     caster = args[0]
     results = []

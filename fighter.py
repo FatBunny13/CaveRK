@@ -170,6 +170,9 @@ class Fighter:
 
         self.mana -= mana_cost
 
+        if self.mana <= 0:
+            self.mana = 0
+
     def take_hunger_damage(self, hunger_cost):
 
         self.nutrition -= hunger_cost

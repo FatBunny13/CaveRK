@@ -1,10 +1,13 @@
 import tcod as libtcod
 from random import randint
 
-from components.ai import BasicMonster
+from components.ai import BasicMonster,PoisonMonster,MagicAttackMonster
+from components.inventory import Inventory
+from components.item import Item
 from entity import Entity
 from fighter import Fighter
 from render_functions import RenderOrder
+from eat_functions import eat,eat_poison,eat_cursed
 
 duchess_component = Fighter(hp=80, defense=20, power=5, xp=500, agility=5, mana=0, base_psyche=0,
                                         attack_dice_minimum=4, attack_dice_maximum=8, ac=5, will=4,is_peaceful=True,talk_message= 'I can\'t believe you made it out! Come quick I need your help!')
@@ -67,3 +70,23 @@ old_farmer_component = Fighter(hp=10, power=0,defense=0, xp=50, agility=1, mana=
 ai_component = BasicMonster()
 old_farmer = Entity(0,0, 't', libtcod.dark_green, 'Old Farmer', blocks=True,
                              render_order=RenderOrder.ACTOR, fighter=old_farmer_component, ai=ai_component)
+inventory_component = Inventory(26)
+bee_boss_1_component = Fighter(hp=80, defense=2, power=4, xp=50, agility=1, mana=0, base_psyche=0,
+                                        attack_dice_minimum=2, attack_dice_maximum=8, ac=0, will=5)
+food_boss_1_component = Item(use_function=eat_poison, amount=-30,
+                                  eat_message='You eat the Queen-Bee. Agh its poisonous!')
+bee_boss_1_ai_component = PoisonMonster()
+
+bee_boss_1 = Entity(32, 3, 'b', libtcod.darker_purple, 'Ghostly Queen-Bee', blocks=True,
+                             render_order=RenderOrder.ACTOR, fighter=bee_boss_1_component, ai=bee_boss_1_ai_component,
+                             item=food_boss_1_component,inventory=inventory_component,)
+bee_boss_2_component = Fighter(hp=30, defense=2, power=4, xp=50, agility=1, mana=0, base_psyche=0,
+                                           attack_dice_minimum=1, attack_dice_maximum=3, ac=0, will=5)
+food_boss_2_component = Item(use_function=eat_poison, amount=-30,
+                                         eat_message='You eat the Drone-Bee. Agh its poisonous!')
+bee_boss_2_ai_component = MagicAttackMonster()
+
+bee_boss_2 = Entity(32, 4, 'b', libtcod.lighter_blue, 'Ghostly Drone-Bee', blocks=True,
+                                render_order=RenderOrder.ACTOR, fighter=bee_boss_2_component,inventory=inventory_component,
+                                ai=bee_boss_2_ai_component,
+                                item=food_boss_2_component)

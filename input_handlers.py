@@ -14,7 +14,7 @@ def handle_keys(player,key, game_state):
         return handle_player_dead_keys(key)
     elif game_state == GameStates.TARGETING:
         return handle_targeting_keys(key)
-    elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
+    elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY,GameStates.GIVE_INVENTORY):
         return handle_inventory_keys(key)
     elif game_state == GameStates.LEVEL_UP:
         return handle_level_up_menu(key)
@@ -34,7 +34,8 @@ def handle_keys(player,key, game_state):
         return handle_attack_menu(key)
     elif game_state == GameStates.QUEST_MENU:
         return handle_quest_menu_keys(key)
-
+    elif game_state == GameStates.BEE_QUEST_COMPLETED:
+        return handle_bee_menu(key)
     return {}
 
 
@@ -61,6 +62,8 @@ def handle_player_turn_keys(key):
     elif key_char == '.':
         return {'wait': True}
     elif key_char == 'g':
+        return {'give_inventory': True}
+    elif key_char == ',':
         return {'pickup': True}
     elif key_char == 's':
         return {'use_skills': True}
@@ -124,7 +127,6 @@ def handle_inventory_keys(key):
 
     if index >= 0:
         return {'inventory_index': index}
-
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         # Alt+Enter: toggle full screen
         return {'fullscreen': True}
@@ -230,6 +232,15 @@ def handle_attack_menu(key):
             return {'do_you_want_to_attack': 'yes'}
         elif key_char == 'b':
             return {'do_you_want_to_attack': 'no'}
+
+    return {}
+
+def handle_bee_menu(key):
+    if key:
+        key_char = chr(key.c)
+
+        if key_char == 'y':
+            return {'result': 'ok'}
 
     return {}
 

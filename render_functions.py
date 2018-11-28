@@ -5,7 +5,7 @@ from enum import Enum
 
 from game_states import GameStates
 
-from menus import character_screen, inventory_menu, level_up_menu, character_creation_menu, gender_selection_menu, job_selection_menu, skill_use_menu,attack_menu,quest_menu
+from menus import character_screen, inventory_menu, level_up_menu, character_creation_menu, gender_selection_menu, job_selection_menu, skill_use_menu,attack_menu,quest_menu,bee_screen
 
 
 class RenderOrder(Enum):
@@ -145,9 +145,11 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
     libtcod.console_blit(panel, 0, 0, screen_width, panel_height, 0, 0, panel_y)
 
 
-    if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
+    if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY,GameStates.GIVE_INVENTORY):
         if game_state == GameStates.SHOW_INVENTORY:
             inventory_title = 'Press the key next to an item to use it, or Esc to cancel.\n'
+        elif game_state == GameStates.GIVE_INVENTORY:
+            inventory_title = 'Press the key next to an item to give it to a monster, or Esc to cancel.\n'
         else:
             inventory_title = 'Press the key next to an item to drop it, or Esc to cancel.\n'
 
@@ -159,6 +161,9 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
     elif game_state == GameStates.CHARACTER_SCREEN:
         character_screen(player, 30, 10, screen_width, screen_height)
 
+    elif game_state == GameStates.BEE_QUEST_COMPLETED:
+        bee_screen(player, 65, 10, screen_width, screen_height)
+
     elif game_state == GameStates.CHARACTER_CREATION:
         character_creation_menu(con, 'Brave peasant! What is your race!:', player, 40, screen_width, screen_height)
 
@@ -167,9 +172,6 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
 
     elif game_state == GameStates.JOB_SELECTION:
         job_selection_menu(con, 'Congratulations! You have gained a level! Pick a job!:', player, 40, screen_width, screen_height)
-
-    elif game_state == GameStates.SKILL_SELECTION:
-        job_selection_menu(con, 'You have gained a skill! Which button should it go in?:', player, 40, screen_width,screen_height)
 
     elif game_state == GameStates.SHOW_SKILL_MENU:
         skill_use_menu(con, 'What skill would you like to use?:', player, 40, screen_width,screen_height)

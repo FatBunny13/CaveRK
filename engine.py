@@ -18,10 +18,12 @@ from components.skill import Skill
 from entity import Entity
 from components.ai import PeacefulMonster,BasicMonster
 from talk_functions import talk_to_enemy
-from npc_list import leader
+from npc_list import leader,bee_boss_1,bee_boss_2
 from quest_list import starting_quest, trash_king_quest
 from random import randint
 from menus import show_message_screen
+from give_functions import give_item_to_enemy
+from artifact_list import honey_blade
 
 def play_game(player, entities, game_map, message_log,game_state, con, panel, constants):
     fov_recompute = True
@@ -47,6 +49,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
     previous_game_state = game_state
 
     targeting_item = None
+    give_item = None
     targeting_skill = None
     ggender = Gender.male
 
@@ -88,6 +91,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
         show_character_screen = action.get('show_character_screen')
         character_creation = action.get('character_creation')
         job = action.get('job')
+        result= action.get('result')
         gender = action.get('gender')
         skill_selection = action.get('skill_selection')
         exit = action.get('exit')
@@ -95,6 +99,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
         do_you_want_to_attack = action.get('do_you_want_to_attack')
         talk = action.get('talk')
         show_quests = action.get('show_quests')
+        give_inventory = action.get('give_inventory')
 
         left_click = mouse_action.get('left_click')
         right_click = mouse_action.get('right_click')
@@ -227,6 +232,8 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
         elif pickup and game_state == GameStates.PLAYERS_TURN:
             for entity in entities:
+                if entity.fighter and entity.x == player.x and entity.y == player.y:
+                    message_log.add_message(Message('a is nothing here to pick up.', libtcod.yellow))
                 if entity.item and entity.x == player.x and entity.y == player.y:
                     pickup_results = player.inventory.add_item(entity)
                     player_turn_results.extend(pickup_results)
@@ -250,6 +257,11 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             game_state = GameStates.SHOW_SKILL_MENU
             libtcod.console_flush()
 
+        if give_inventory:
+            previous_game_state = game_state
+            game_state = GameStates.GIVE_INVENTORY
+            libtcod.console_flush()
+
         if drop_inventory:
             previous_game_state = game_state
             game_state = GameStates.DROP_INVENTORY
@@ -265,7 +277,11 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             elif game_state == GameStates.DROP_INVENTORY:
                 player_turn_results.extend(player.inventory.drop_item(item))
                 libtcod.console_flush()
-
+            elif game_state == GameStates.GIVE_INVENTORY:
+                libtcod.console_flush()
+                give_item = item
+                player.inventory.remove_item(give_item)
+                game_state = GameStates.GIVE_TARGETING
         if skill_index is not None and previous_game_state != GameStates.PLAYER_DEAD and skill_index < len(
                 player.skills.number_of_skills):
             skill = player.skills.number_of_skills[skill_index]
@@ -560,12 +576,54 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 player_turn_results.append({'targeting_cancelled': True})
                 libtcod.console_flush()
 
+        if game_state == GameStates.GIVE_TARGETING:
+            global bee_quest
+            bee_quest = False
+            if left_click:
+                target_x, target_y = left_click
+
+                for entity in entities:
+                    if entity.distance(target_x, target_y) <= 1 and entity.fighter:
+                        for entity in entities:
+                            if entity == player and entity.x == target_x and entity.y == target_y:
+                                entities.append(give_item)
+                                message_log.add_message(Message('You dropped the {0}'.format(give_item.name)))
+                                player.equipment.deequip(give_item)
+                                give_item.x = target_x
+                                give_item.y = target_y
+                                break
+                            elif entity.fighter and entity.fighter.boss and entity.x == target_x and entity.y == target_y:
+                                message_log.add_message(Message('soto'.format(give_item.name)))
+                                bee_quest = True
+                                entities.append(honey_blade)
+                                honey_blade.x = entity.x
+                                honey_blade.y = entity.y
+                                break
+                            elif entity.fighter and entity.x == target_x and entity.y == target_y and entity != player and entity != bee_boss_1:
+                                player.equipment.deequip(give_item)
+                                entity.inventory.add_item(give_item)
+                                break
+
+                libtcod.console_flush()
+                game_state = GameStates.PLAYERS_TURN
+                if bee_quest == True:
+                    game_state = GameStates.BEE_QUEST_COMPLETED
+            elif right_click:
+                player_turn_results.append({'targeting_cancelled': True})
+                libtcod.console_flush()
+
+        if game_state == GameStates.BEE_QUEST_COMPLETED:
+            if result == 'ok':
+                game_state = GameStates.PLAYERS_TURN
+
+
         if game_state == GameStates.SKILL_TARGETING:
             if left_click:
                 target_x, target_y = left_click
 
+
                 skill_use_results = player.skills.use(targeting_skill, entities=entities, fov_map=fov_map,
-                                                        target_x=target_x, target_y=target_y)
+                                                        target_x=target_x, target_y=target_y,maximum_range=1)
                 player_turn_results.extend(skill_use_results)
                 libtcod.console_flush()
             elif right_click:
@@ -620,7 +678,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 libtcod.console_flush()
 
         if exit:
-            if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.CHARACTER_SCREEN):
+            if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.CHARACTER_SCREEN,GameStates.SHOW_SKILL_MENU,GameStates.GIVE_INVENTORY):
                 game_state = previous_game_state
                 libtcod.console_flush()
             elif game_state == GameStates.SHOW_SKILL_MENU:

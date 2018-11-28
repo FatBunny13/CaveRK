@@ -441,24 +441,29 @@ class GameMap:
             contents = map.read()
             player.x = 32
             player.y = 12
+            inventory_component = Inventory(26)
+            boss_component_1 = Boss(boss=3)
             bee_boss_1_component = Fighter(hp=80, defense=2, power=4, xp=50, agility=1, mana=0, base_psyche=0,
-                                        attack_dice_minimum=2, attack_dice_maximum=8, ac=0, will=5)
+                                        attack_dice_minimum=2, attack_dice_maximum=8, ac=0, will=5,
+                                boss=boss_component_1)
             food_boss_1_component = Item(use_function=eat_poison, amount=-30,
                                   eat_message='You eat the Queen-Bee. Agh its poisonous!')
             bee_boss_1_ai_component = PoisonMonster()
 
             bee_boss_1 = Entity(32, 3, 'b', libtcod.darker_purple, 'Ghostly Queen-Bee', blocks=True,
                              render_order=RenderOrder.ACTOR, fighter=bee_boss_1_component, ai=bee_boss_1_ai_component,
-                             item=food_boss_1_component)
+                             item=food_boss_1_component,inventory=inventory_component)
             entities.append(bee_boss_1)
+            boss_component_2 = Boss(boss=4)
             bee_boss_2_component = Fighter(hp=30, defense=2, power=4, xp=50, agility=1, mana=0, base_psyche=0,
-                                           attack_dice_minimum=1, attack_dice_maximum=3, ac=0, will=5)
+                                           attack_dice_minimum=1, attack_dice_maximum=3, ac=0, will=5,
+                                boss=boss_component_2)
             food_boss_2_component = Item(use_function=eat_poison, amount=-30,
                                          eat_message='You eat the Drone-Bee. Agh its poisonous!')
             bee_boss_2_ai_component = MagicAttackMonster()
 
             bee_boss_2 = Entity(32, 4, 'b', libtcod.lighter_blue, 'Ghostly Drone-Bee', blocks=True,
-                                render_order=RenderOrder.ACTOR, fighter=bee_boss_2_component,
+                                render_order=RenderOrder.ACTOR, fighter=bee_boss_2_component,inventory=inventory_component,
                                 ai=bee_boss_2_ai_component,
                                 item=food_boss_2_component)
             entities.append(bee_boss_2)
@@ -1545,10 +1550,11 @@ class GameMap:
                     if monster_choice == 'orc':
                         fighter_component = Fighter(hp=20, defense=2, power=5, xp=5000, agility=1,mana = 0,base_psyche = 0,attack_dice_minimum=1,attack_dice_maximum=4,ac=0,will=0,talk_message = 'hiya')
                         ai_component = BasicMonster()
+                        inventory_component = Inventory(26)
                         food_component = Item(use_function=eat,amount=30,eat_message='You eat the Orc! It tastes like graphite.')
 
                         monster = Entity(x, y, 'o', libtcod.desaturated_green, 'Orc', blocks=True,
-                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,item=food_component)
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component,item=food_component,inventory=inventory_component)
                     elif monster_choice == 'stalker':
                         fighter_component = Fighter(hp=5, defense=2, power=5, xp=5000, agility=1, mana=0, base_psyche=0,attack_dice_minimum=1, attack_dice_maximum=4, ac=0, will=0,stealthed=1)
                         food_component = Item(use_function=eat, amount=0,
