@@ -100,6 +100,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
         talk = action.get('talk')
         show_quests = action.get('show_quests')
         give_inventory = action.get('give_inventory')
+        apply = action.get('apply')
 
         left_click = mouse_action.get('left_click')
         right_click = mouse_action.get('right_click')
@@ -252,6 +253,11 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             game_state = GameStates.QUEST_MENU
             libtcod.console_flush()
 
+        if apply:
+            previous_game_state = game_state
+            game_state = GameStates.APPLY_ITEM
+            libtcod.console_flush()
+
         if use_skills:
             previous_game_state = game_state
             game_state = GameStates.SHOW_SKILL_MENU
@@ -282,6 +288,9 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 give_item = item
                 player.inventory.remove_item(give_item)
                 game_state = GameStates.GIVE_TARGETING
+            elif game_state == GameStates.APPLY_ITEM:
+                player_turn_results.extend(player.inventory.apply(item, entities=entities, fov_map=fov_map))
+                libtcod.console_flush()
         if skill_index is not None and previous_game_state != GameStates.PLAYER_DEAD and skill_index < len(
                 player.skills.number_of_skills):
             skill = player.skills.number_of_skills[skill_index]
@@ -596,6 +605,11 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                                 message_log.add_message(Message('soto'.format(give_item.name)))
                                 bee_quest = True
                                 entities.append(honey_blade)
+                                for entity in entities:
+                                    if entity == bee_boss_1:
+                                        entities.remove(bee_boss_1)
+                                    elif entity == bee_boss_2:
+                                        entities.remove(bee_boss_2)
                                 honey_blade.x = entity.x
                                 honey_blade.y = entity.y
                                 break
@@ -718,6 +732,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             targeting_cancelled = player_turn_result.get('targeting_cancelled')
             xp = player_turn_result.get('xp')
             skill_used = player_turn_result.get('used')
+            apply_failed = action.get('apply_failed')
 
             if message:
                 message_log.add_message(message)
@@ -796,6 +811,9 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
 
                     previous_game_state = game_state
                     game_state = GameStates.LEVEL_UP
+
+            if apply_failed:
+                game_state = GameStates.PLAYERS_TURN
 
 
         if game_state == GameStates.ENEMY_TURN:

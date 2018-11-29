@@ -48,14 +48,48 @@ class Inventory:
             if item_component.item.targeting and not (kwargs.get('target_x') or kwargs.get('target_y')):
                 results.append({'targeting': item_entity})
             else:
-                kwargs = {**item_component.function_kwargs, **kwargs}
-                item_use_results = item_component.use_function(self.owner, **kwargs)
+                kwargs = {**item_component.item.function_kwargs, **kwargs}
+                item_use_results = item_component.item.use_function(self.owner, **kwargs)
 
                 for item_use_result in item_use_results:
                     if item_use_result.get('consumed'):
                         self.remove_item(item_entity)
 
                 results.extend(item_use_results)
+
+        return results
+
+    def apply(self, item_entity, **kwargs):
+        results = []
+
+        item_component = item_entity
+
+        if item_component.equippable:
+            if item_component.item.targeting and not (kwargs.get('target_x') or kwargs.get('target_y')):
+                results.append({'targeting': item_entity})
+            elif item_component.item == None:
+                results.append({'consumed': True, 'message': Message('You cannot use this item', libtcod.green)})
+                return results
+            else:
+                kwargs = {**item_component.item.function_kwargs, **kwargs}
+                item_use_results = item_component.item.use_function(self.owner, **kwargs)
+
+                for item_use_result in item_use_results:
+                    if item_use_result.get('consumed'):
+
+                        results.extend(item_use_results)
+        else:
+            if item_component.item.targeting and not (kwargs.get('target_x') or kwargs.get('target_y')):
+                results.append({'targeting': item_entity})
+            else:
+                kwargs = {**item_component.item.function_kwargs, **kwargs}
+                item_use_results = item_component.item.use_function(self.owner, **kwargs)
+
+                for item_use_result in item_use_results:
+                    if item_use_result.get('consumed'):
+                        self.remove_item(item_entity)
+
+                        results.extend(item_use_results)
 
         return results
 

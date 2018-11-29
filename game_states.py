@@ -21,3 +21,4 @@ class GameStates(Enum):
     GIVE_INVENTORY = 17
     GIVE_TARGETING = 18
     BEE_QUEST_COMPLETED = 19
+    APPLY_ITEM = 20
