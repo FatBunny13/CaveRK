@@ -67,9 +67,8 @@ class Inventory:
         if item_component.equippable:
             if item_component.item.targeting and not (kwargs.get('target_x') or kwargs.get('target_y')):
                 results.append({'targeting': item_entity})
-            elif item_component.item == None:
+            elif item_component.item.use_function == None:
                 results.append({'consumed': True, 'message': Message('You cannot use this item', libtcod.green)})
-                return results
             else:
                 kwargs = {**item_component.item.function_kwargs, **kwargs}
                 item_use_results = item_component.item.use_function(self.owner, **kwargs)

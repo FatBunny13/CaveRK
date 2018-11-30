@@ -145,7 +145,7 @@ def render_all(con, panel, entities, player, game_map, fov_map, fov_recompute, m
     libtcod.console_blit(panel, 0, 0, screen_width, panel_height, 0, 0, panel_y)
 
 
-    if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY,GameStates.GIVE_INVENTORY):
+    if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY,GameStates.GIVE_INVENTORY,GameStates.APPLY_ITEM):
         if game_state == GameStates.SHOW_INVENTORY:
             inventory_title = 'Press the key next to an item to use it, or Esc to cancel.\n'
         elif game_state == GameStates.GIVE_INVENTORY:

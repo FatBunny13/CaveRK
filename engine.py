@@ -214,6 +214,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
         elif game_state == GameStates.PLAYERS_TURN and player.fighter.paralysis == 1:
                 game_state = GameStates.ENEMY_TURN
                 player.fighter.paralysis_time -= 1
+                player.fighter.nutrition -= 1
                 if player.fighter.paralysis_time == 0:
                     player.fighter.paralysis = 0
                     message_log.add_message(Message('You are no longer paralysed!', libtcod.yellow))
@@ -577,8 +578,14 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
             if left_click:
                 target_x, target_y = left_click
 
-                item_use_results = player.inventory.use(targeting_item, entities=entities, fov_map=fov_map,
+                if targeting_item.equippable:
+                    item_use_results = player.inventory.apply(targeting_item, entities=entities, fov_map=fov_map,
+                                                            target_x=target_x, target_y=target_y)
+                    game_state = GameStates.ENEMY_TURN
+                else:
+                    item_use_results = player.inventory.use(targeting_item, entities=entities, fov_map=fov_map,
                                                         target_x=target_x, target_y=target_y)
+                    game_state = GameStates.ENEMY_TURN
                 player_turn_results.extend(item_use_results)
                 libtcod.console_flush()
             elif right_click:
@@ -601,17 +608,20 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                                 give_item.x = target_x
                                 give_item.y = target_y
                                 break
-                            elif entity.fighter and entity.fighter.boss and entity.x == target_x and entity.y == target_y:
+                            elif entity == bee_boss_1 and entity.x == target_x and entity.y == target_y:
                                 message_log.add_message(Message('soto'.format(give_item.name)))
                                 bee_quest = True
                                 entities.append(honey_blade)
                                 for entity in entities:
                                     if entity == bee_boss_1:
                                         entities.remove(bee_boss_1)
-                                    elif entity == bee_boss_2:
-                                        entities.remove(bee_boss_2)
+                                        break
                                 honey_blade.x = entity.x
                                 honey_blade.y = entity.y
+                                for entity in entities:
+                                    if entity == bee_boss_2:
+                                        entities.remove(bee_boss_2)
+                                        break
                                 break
                             elif entity.fighter and entity.x == target_x and entity.y == target_y and entity != player and entity != bee_boss_1:
                                 player.equipment.deequip(give_item)
@@ -692,7 +702,7 @@ def play_game(player, entities, game_map, message_log,game_state, con, panel, co
                 libtcod.console_flush()
 
         if exit:
-            if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.CHARACTER_SCREEN,GameStates.SHOW_SKILL_MENU,GameStates.GIVE_INVENTORY):
+            if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.CHARACTER_SCREEN,GameStates.SHOW_SKILL_MENU,GameStates.GIVE_INVENTORY,GameStates.APPLY_ITEM):
                 game_state = previous_game_state
                 libtcod.console_flush()
             elif game_state == GameStates.SHOW_SKILL_MENU:

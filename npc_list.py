@@ -5,7 +5,7 @@ from components.ai import BasicMonster,PoisonMonster,MagicAttackMonster
 from components.inventory import Inventory
 from components.item import Item
 from entity import Entity
-from fighter import Fighter
+from fighter import Fighter, Boss
 from render_functions import RenderOrder
 from eat_functions import eat,eat_poison,eat_cursed
 
@@ -71,17 +71,22 @@ ai_component = BasicMonster()
 old_farmer = Entity(0,0, 't', libtcod.dark_green, 'Old Farmer', blocks=True,
                              render_order=RenderOrder.ACTOR, fighter=old_farmer_component, ai=ai_component)
 inventory_component = Inventory(26)
+inventory_component = Inventory(26)
+boss_component_1 = Boss(boss=3)
 bee_boss_1_component = Fighter(hp=80, defense=2, power=4, xp=50, agility=1, mana=0, base_psyche=0,
-                                        attack_dice_minimum=2, attack_dice_maximum=8, ac=0, will=5)
+                                        attack_dice_minimum=2, attack_dice_maximum=8, ac=0, will=5,
+                                boss=boss_component_1)
 food_boss_1_component = Item(use_function=eat_poison, amount=-30,
                                   eat_message='You eat the Queen-Bee. Agh its poisonous!')
 bee_boss_1_ai_component = PoisonMonster()
 
 bee_boss_1 = Entity(32, 3, 'b', libtcod.darker_purple, 'Ghostly Queen-Bee', blocks=True,
                              render_order=RenderOrder.ACTOR, fighter=bee_boss_1_component, ai=bee_boss_1_ai_component,
-                             item=food_boss_1_component,inventory=inventory_component,)
+                             item=food_boss_1_component,inventory=inventory_component)
+boss_component_2 = Boss(boss=4)
 bee_boss_2_component = Fighter(hp=30, defense=2, power=4, xp=50, agility=1, mana=0, base_psyche=0,
-                                           attack_dice_minimum=1, attack_dice_maximum=3, ac=0, will=5)
+                                           attack_dice_minimum=1, attack_dice_maximum=3, ac=0, will=5,
+                                boss=boss_component_2)
 food_boss_2_component = Item(use_function=eat_poison, amount=-30,
                                          eat_message='You eat the Drone-Bee. Agh its poisonous!')
 bee_boss_2_ai_component = MagicAttackMonster()
